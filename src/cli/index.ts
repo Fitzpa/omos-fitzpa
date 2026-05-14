@@ -42,8 +42,8 @@ function printHelp(): void {
 oh-my-opencode-slim installer
 
 Usage:
-  bunx oh-my-opencode-slim install [OPTIONS]
-  bunx oh-my-opencode-slim doctor [OPTIONS]
+  bunx omos-fitzpa install [OPTIONS]
+  bunx omos-fitzpa doctor [OPTIONS]
 
 Options:
   --skills=yes|no        Install recommended and bundled skills (default: yes)
@@ -63,12 +63,12 @@ OpenAI is active unless --preset selects another generated preset.
 For the full config reference, see docs/configuration.md.
 
 Examples:
-  bunx oh-my-opencode-slim install
-  bunx oh-my-opencode-slim install --no-tui --skills=yes
-  bunx oh-my-opencode-slim install --preset=opencode-go
-  bunx oh-my-opencode-slim install --preset=zen-balanced
-  bunx oh-my-opencode-slim install --reset
-  bunx oh-my-opencode-slim doctor
+  bunx omos-fitzpa install
+  bunx omos-fitzpa install --no-tui --skills=yes
+  bunx omos-fitzpa install --preset=opencode-go
+  bunx omos-fitzpa install --preset=zen-balanced
+  bunx omos-fitzpa install --reset
+  bunx omos-fitzpa doctor
 `);
 }
 

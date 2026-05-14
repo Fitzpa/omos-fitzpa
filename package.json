@@ -1,7 +1,7 @@
 {
-  "name": "oh-my-opencode-slim",
+  "name": "omos-fitzpa",
   "version": "1.1.0",
-  "description": "Lightweight agent orchestration plugin for OpenCode - a slimmed-down fork of oh-my-opencode",
+  "description": "Lightweight agent orchestration plugin for OpenCode - a fork of oh-my-opencode-slim",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -14,9 +14,7 @@
       "types": "./dist/tui.d.ts"
     }
   },
-  "bin": {
-    "oh-my-opencode-slim": "./dist/cli/index.js"
-  },
+  "bin": "./dist/cli/index.js",
   "type": "module",
   "license": "MIT",
   "keywords": [
@@ -32,12 +30,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/alvinunreal/oh-my-opencode-slim"
+    "url": "git+https://github.com/fitzpa/omos-fitzpa.git"
   },
   "bugs": {
-    "url": "https://github.com/alvinunreal/oh-my-opencode-slim/issues"
+    "url": "https://github.com/fitzpa/omos-fitzpa/issues"
   },
-  "homepage": "https://github.com/alvinunreal/oh-my-opencode-slim#readme",
+  "homepage": "https://github.com/fitzpa/omos-fitzpa#readme",
   "files": [
     "dist",
     "src/skills",

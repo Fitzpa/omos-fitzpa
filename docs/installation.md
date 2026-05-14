@@ -1,10 +1,12 @@
 # Installation Guide
 
-Complete installation instructions for oh-my-opencode-slim.
+Complete installation instructions for `omos-fitzpa`, the published fork of
+oh-my-opencode-slim.
 
 ## Table of Contents
 
 - [For Humans](#for-humans)
+- [Migrating From Upstream Or Local Installs](#migrating-from-upstream-or-local-installs)
 - [For LLM Agents](#for-llm-agents)
 - [Troubleshooting](#troubleshooting)
 - [Uninstallation](#uninstallation)
@@ -18,13 +20,13 @@ Complete installation instructions for oh-my-opencode-slim.
 Run the interactive installer:
 
 ```bash
-bunx oh-my-opencode-slim@latest install
+bunx omos-fitzpa@latest install
 ```
 
 Or use non-interactive mode:
 
 ```bash
-bunx oh-my-opencode-slim@latest install --no-tui --skills=yes
+bunx omos-fitzpa@latest install --no-tui --skills=yes
 ```
 
 ### Configuration Options
@@ -50,14 +52,14 @@ By default, the installer is non-destructive. If an `oh-my-opencode-slim.json` c
 To force overwrite of your existing configuration, use the `--reset` flag:
 
 ```bash
-bunx oh-my-opencode-slim@latest install --reset
+bunx omos-fitzpa@latest install --reset
 ```
 
 **Note:** When using `--reset`, the installer creates a `.bak` backup file before overwriting, so your previous configuration is preserved.
 
 ### After Installation
 
-The installer generates OpenAI, OpenCode Go, and OpenCode Zen presets, with OpenAI active by default (using `gpt-5.5` and `gpt-5.4-mini` models). To make OpenCode Go active during install, run `bunx oh-my-opencode-slim@latest install --preset=opencode-go`. To use OpenCode Zen, choose `--preset=zen-max`, `--preset=zen-balanced`, or `--preset=zen-low`. The OpenCode Go preset uses GLM-5.1 for Orchestrator, so the installer also enables Observer with `opencode-go/kimi-k2.6` for visual analysis. To switch providers later or build a mixed setup, use **[Configuration Reference](configuration.md)** for the full option reference and the preset docs for copyable examples.
+The installer generates OpenAI, OpenCode Go, and OpenCode Zen presets, with OpenAI active by default (using `gpt-5.5` and `gpt-5.4-mini` models). To make OpenCode Go active during install, run `bunx omos-fitzpa@latest install --preset=opencode-go`. To use OpenCode Zen, choose `--preset=zen-max`, `--preset=zen-balanced`, or `--preset=zen-low`. The OpenCode Go preset uses GLM-5.1 for Orchestrator, so the installer also enables Observer with `opencode-go/kimi-k2.6` for visual analysis. To switch providers later or build a mixed setup, use **[Configuration Reference](configuration.md)** for the full option reference and the preset docs for copyable examples.
 
 Then:
 
@@ -86,15 +88,34 @@ ping all agents
 Paste this into Claude Code, AmpCode, Cursor, or any coding agent:
 
 ```
-Install and configure by following the instructions here:
-https://raw.githubusercontent.com/alvinunreal/oh-my-opencode-slim/refs/heads/master/README.md
+Install and configure omos-fitzpa from npm using:
+bunx omos-fitzpa@latest install
 ```
+
+---
+
+## Migrating From Upstream Or Local Installs
+
+If you previously installed `oh-my-opencode-slim`, a pinned upstream version, or
+a local checkout, run the published installer:
+
+```bash
+bunx omos-fitzpa@latest install
+```
+
+The installer replaces old plugin entries in `opencode.json` and `tui.json`
+with `omos-fitzpa`. It does not overwrite the existing plugin configuration
+unless you pass `--reset`, so your models and presets in
+`~/.config/opencode/oh-my-opencode-slim.json` are preserved.
+
+After migration, the OpenCode plugin entries should contain `omos-fitzpa`, not
+`oh-my-opencode-slim` or a local repository path.
 
 ---
 
 ## For LLM Agents
 
-If you're an LLM Agent helping set up oh-my-opencode-slim, follow these steps.
+If you're an LLM Agent helping set up `omos-fitzpa`, follow these steps.
 
 ### Step 1: Check OpenCode Installation
 
@@ -109,28 +130,28 @@ If not installed, direct the user to https://opencode.ai/docs first.
 The installer generates OpenAI, OpenCode Go, and OpenCode Zen presets, with OpenAI active by default:
 
 ```bash
-bunx oh-my-opencode-slim@latest install --no-tui --skills=yes
+bunx omos-fitzpa@latest install --no-tui --skills=yes
 ```
 
 **Examples:**
 ```bash
 # Interactive install (asks about tmux and skills)
-bunx oh-my-opencode-slim@latest install
+bunx omos-fitzpa@latest install
 
 # Non-interactive with default skills
-bunx oh-my-opencode-slim@latest install --no-tui --skills=yes
+bunx omos-fitzpa@latest install --no-tui --skills=yes
 
 # Make the generated OpenCode Go preset active
-bunx oh-my-opencode-slim@latest install --preset=opencode-go
+bunx omos-fitzpa@latest install --preset=opencode-go
 
 # Make the balanced OpenCode Zen preset active
-bunx oh-my-opencode-slim@latest install --preset=zen-balanced
+bunx omos-fitzpa@latest install --preset=zen-balanced
 
 # Non-interactive without skills
-bunx oh-my-opencode-slim@latest install --no-tui --skills=no
+bunx omos-fitzpa@latest install --no-tui --skills=no
 
 # Force overwrite existing configuration
-bunx oh-my-opencode-slim@latest install --reset
+bunx omos-fitzpa@latest install --reset
 ```
 
 The installer automatically:
@@ -172,7 +193,7 @@ Verify all agents respond successfully.
 
 Check the expected config format:
 ```bash
-bunx oh-my-opencode-slim@latest install --help
+bunx omos-fitzpa@latest install --help
 ```
 
 Then manually create the config files at:
@@ -186,7 +207,7 @@ If the installer reports that the configuration already exists, you have two opt
 
 2. **Reset configuration**: Use `--reset` to overwrite:
    ```bash
-   bunx oh-my-opencode-slim@latest install --reset
+   bunx omos-fitzpa@latest install --reset
    ```
    A `.bak` backup file will be created automatically.
 
@@ -199,7 +220,7 @@ If the installer reports that the configuration already exists, you have two opt
 
 2. From your project root, verify your config file exists and is valid:
    ```bash
-   bunx oh-my-opencode-slim@latest doctor
+   bunx omos-fitzpa@latest doctor
    ```
 
 3. Check that your provider is configured in `~/.config/opencode/opencode.json`
@@ -229,7 +250,7 @@ Add a `$schema` reference to your config for autocomplete and inline validation:
 
 ```jsonc
 {
-  "$schema": "https://unpkg.com/oh-my-opencode-slim@latest/oh-my-opencode-slim.schema.json",
+  "$schema": "https://unpkg.com/omos-fitzpa@latest/oh-my-opencode-slim.schema.json",
   // your config...
 }
 ```
@@ -254,7 +275,7 @@ See the [Multiplexer Integration Guide](multiplexer-integration.md) for more det
 
 1. **Remove the plugin from your OpenCode config**:
 
-   Edit `~/.config/opencode/opencode.json` and remove `"oh-my-opencode-slim"` from the `plugin` array.
+   Edit `~/.config/opencode/opencode.json` and remove `"omos-fitzpa"` from the `plugin` array.
 
 2. **Remove configuration files (optional)**:
    ```bash

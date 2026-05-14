@@ -26,7 +26,12 @@ import type {
   OpenCodeConfig,
 } from './types';
 
-const PACKAGE_NAME = 'oh-my-opencode-slim';
+const PACKAGE_NAME = 'omos-fitzpa';
+const LEGACY_PACKAGE_NAME = 'oh-my-opencode-slim';
+
+function getPackagePathParts(packageName: string): string[] {
+  return packageName.split('/').filter(Boolean);
+}
 
 function isString(value: unknown): value is string {
   return typeof value === 'string';
@@ -111,7 +116,10 @@ function isPluginEntry(entry: string): boolean {
   return (
     entry === PACKAGE_NAME ||
     entry.startsWith(`${PACKAGE_NAME}@`) ||
+    entry === LEGACY_PACKAGE_NAME ||
+    entry.startsWith(`${LEGACY_PACKAGE_NAME}@`) ||
     (entry.startsWith('file://') && entry.includes(PACKAGE_NAME)) ||
+    (entry.startsWith('file://') && entry.includes(LEGACY_PACKAGE_NAME)) ||
     isLocalPackageRootEntry(entry)
   );
 }
@@ -179,7 +187,7 @@ function verifyOpenCodePluginCache(cacheDir: string): ConfigMergeResult | null {
   const pluginPackageJsonPath = join(
     cacheDir,
     'node_modules',
-    PACKAGE_NAME,
+    ...getPackagePathParts(PACKAGE_NAME),
     'package.json',
   );
 

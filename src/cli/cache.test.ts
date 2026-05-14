@@ -88,14 +88,14 @@ describe('warmOpenCodePluginCache', () => {
 
     const packageRoot = join(
       tmpDir,
-      'bunx-1000-oh-my-opencode-slim@latest',
+      'bunx-1000-omos-fitzpa@latest',
       'node_modules',
-      'oh-my-opencode-slim',
+      'omos-fitzpa',
     );
     mkdirSync(join(packageRoot, 'dist', 'cli'), { recursive: true });
     writeFileSync(
       join(packageRoot, 'package.json'),
-      JSON.stringify({ name: 'oh-my-opencode-slim' }),
+      JSON.stringify({ name: 'omos-fitzpa' }),
     );
     process.argv[1] = join(packageRoot, 'dist', 'cli', 'index.js');
 
@@ -106,7 +106,7 @@ describe('warmOpenCodePluginCache', () => {
       cacheHome,
       'opencode',
       'packages',
-      'oh-my-opencode-slim@latest',
+      'omos-fitzpa@latest',
     );
 
     expect(result?.success).toBe(true);
@@ -123,10 +123,10 @@ describe('warmOpenCodePluginCache', () => {
     expect(
       JSON.parse(readFileSync(join(expectedCacheDir, 'package.json'), 'utf-8')),
     ).toEqual({
-      name: 'oh-my-opencode-slim-cache',
+      name: 'omos-fitzpa-cache',
       private: true,
       dependencies: {
-        'oh-my-opencode-slim': 'latest',
+        'omos-fitzpa': 'latest',
       },
     });
 
@@ -140,14 +140,14 @@ describe('warmOpenCodePluginCache', () => {
 
     const packageRoot = join(
       tmpDir,
-      'bunx-1000-oh-my-opencode-slim@latest',
+      'bunx-1000-omos-fitzpa@latest',
       'node_modules',
-      'oh-my-opencode-slim',
+      'omos-fitzpa',
     );
     mkdirSync(join(packageRoot, 'dist', 'cli'), { recursive: true });
     writeFileSync(
       join(packageRoot, 'package.json'),
-      JSON.stringify({ name: 'oh-my-opencode-slim' }),
+      JSON.stringify({ name: 'omos-fitzpa' }),
     );
     process.argv[1] = join(packageRoot, 'dist', 'cli', 'index.js');
 
@@ -155,7 +155,7 @@ describe('warmOpenCodePluginCache', () => {
       cacheHome,
       'opencode',
       'packages',
-      'oh-my-opencode-slim@latest',
+      'omos-fitzpa@latest',
     );
     mkdirSync(expectedCacheDir, { recursive: true });
     writeFileSync(
@@ -174,10 +174,10 @@ describe('warmOpenCodePluginCache', () => {
     expect(
       JSON.parse(readFileSync(join(expectedCacheDir, 'package.json'), 'utf-8')),
     ).toEqual({
-      name: 'oh-my-opencode-slim-cache',
+      name: 'omos-fitzpa-cache',
       private: true,
       dependencies: {
-        'oh-my-opencode-slim': 'latest',
+        'omos-fitzpa': 'latest',
       },
     });
 
@@ -191,14 +191,14 @@ describe('warmOpenCodePluginCache', () => {
 
     const packageRoot = join(
       tmpDir,
-      'bunx-1000-oh-my-opencode-slim@latest',
+      'bunx-1000-omos-fitzpa@latest',
       'node_modules',
-      'oh-my-opencode-slim',
+      'omos-fitzpa',
     );
     mkdirSync(join(packageRoot, 'dist', 'cli'), { recursive: true });
     writeFileSync(
       join(packageRoot, 'package.json'),
-      JSON.stringify({ name: 'oh-my-opencode-slim' }),
+      JSON.stringify({ name: 'omos-fitzpa' }),
     );
     process.argv[1] = join(packageRoot, 'dist', 'cli', 'index.js');
     crossSpawnMock.mockImplementation(() => createSpawnResult());
@@ -208,19 +208,14 @@ describe('warmOpenCodePluginCache', () => {
 
     expect(result).toEqual({
       success: false,
-      configPath: join(
-        cacheHome,
-        'opencode',
-        'packages',
-        'oh-my-opencode-slim@latest',
-      ),
+      configPath: join(cacheHome, 'opencode', 'packages', 'omos-fitzpa@latest'),
       error: `Cached plugin package not found at ${join(
         cacheHome,
         'opencode',
         'packages',
-        'oh-my-opencode-slim@latest',
+        'omos-fitzpa@latest',
         'node_modules',
-        'oh-my-opencode-slim',
+        'omos-fitzpa',
         'package.json',
       )}`,
     });
@@ -235,14 +230,14 @@ describe('warmOpenCodePluginCache', () => {
 
     const packageRoot = join(
       tmpDir,
-      'bunx-1000-oh-my-opencode-slim@latest',
+      'bunx-1000-omos-fitzpa@latest',
       'node_modules',
-      'oh-my-opencode-slim',
+      'omos-fitzpa',
     );
     mkdirSync(join(packageRoot, 'dist', 'cli'), { recursive: true });
     writeFileSync(
       join(packageRoot, 'package.json'),
-      JSON.stringify({ name: 'oh-my-opencode-slim' }),
+      JSON.stringify({ name: 'omos-fitzpa' }),
     );
     process.argv[1] = join(packageRoot, 'dist', 'cli', 'index.js');
     crossSpawnMock.mockImplementation(() => ({
@@ -255,12 +250,7 @@ describe('warmOpenCodePluginCache', () => {
 
     expect(result).toEqual({
       success: false,
-      configPath: join(
-        cacheHome,
-        'opencode',
-        'packages',
-        'oh-my-opencode-slim@latest',
-      ),
+      configPath: join(cacheHome, 'opencode', 'packages', 'omos-fitzpa@latest'),
       error: 'registry unavailable',
     });
 
@@ -274,21 +264,18 @@ describe('warmOpenCodePluginCache', () => {
 
     const packageRoot = join(
       tmpDir,
-      'bunx-1000-oh-my-opencode-slim@latest',
+      'bunx-1000-omos-fitzpa@latest',
       'node_modules',
-      'oh-my-opencode-slim',
+      'omos-fitzpa',
     );
     mkdirSync(join(packageRoot, 'dist', 'cli'), { recursive: true });
     writeFileSync(
       join(packageRoot, 'package.json'),
-      JSON.stringify({ name: 'oh-my-opencode-slim' }),
+      JSON.stringify({ name: 'omos-fitzpa' }),
     );
     process.argv[1] = join(packageRoot, 'dist', 'cli', 'index.js');
 
-    const packageJsonSuffix = join(
-      'oh-my-opencode-slim@latest',
-      'package.json',
-    );
+    const packageJsonSuffix = join('omos-fitzpa@latest', 'package.json');
     const fs = await import('node:fs');
     const originalWriteFileSync = fs.writeFileSync;
     const writeSpy = spyOn(fs, 'writeFileSync').mockImplementation(
@@ -309,7 +296,7 @@ describe('warmOpenCodePluginCache', () => {
           cacheHome,
           'opencode',
           'packages',
-          'oh-my-opencode-slim@latest',
+          'omos-fitzpa@latest',
         ),
         error: 'Failed to write cache package.json: Error: disk full',
       });
@@ -326,7 +313,7 @@ describe('warmOpenCodePluginCache', () => {
     mkdirSync(join(packageRoot, 'dist', 'cli'), { recursive: true });
     writeFileSync(
       join(packageRoot, 'package.json'),
-      JSON.stringify({ name: 'oh-my-opencode-slim' }),
+      JSON.stringify({ name: 'omos-fitzpa' }),
     );
     process.argv[1] = join(packageRoot, 'dist', 'cli', 'index.js');
 
@@ -347,10 +334,10 @@ function mkdirTemp(): string {
 function writeCachedPluginPackage(cacheDir?: string): void {
   if (!cacheDir) return;
 
-  const pluginRoot = join(cacheDir, 'node_modules', 'oh-my-opencode-slim');
+  const pluginRoot = join(cacheDir, 'node_modules', 'omos-fitzpa');
   mkdirSync(pluginRoot, { recursive: true });
   writeFileSync(
     join(pluginRoot, 'package.json'),
-    JSON.stringify({ name: 'oh-my-opencode-slim' }),
+    JSON.stringify({ name: 'omos-fitzpa' }),
   );
 }

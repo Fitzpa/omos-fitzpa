@@ -6,7 +6,7 @@ The installer includes three generated presets for OpenCode Zen subscribers:
 Use one during install:
 
 ```bash
-bunx oh-my-opencode-slim@latest install --preset=zen-balanced
+bunx omos-fitzpa@latest install --preset=zen-balanced
 ```
 
 Or switch at runtime:

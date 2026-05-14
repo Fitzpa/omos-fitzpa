@@ -2,6 +2,13 @@ import type { Plugin } from '@opencode-ai/plugin';
 import { createAgents, getAgentConfigs, getDisabledAgents } from './agents';
 import { buildOrchestratorPrompt } from './agents/orchestrator';
 import {
+  agentAllowsCodeGraph,
+  CODEGRAPH_BASH_GUIDANCE,
+  CODEGRAPH_SYSTEM_GUIDANCE,
+  hasCodeGraphIndex,
+  hasCodeGraphMcp,
+} from './codegraph';
+import {
   type AgentOverrideConfig,
   deepMerge,
   loadPluginConfig,
@@ -21,6 +28,7 @@ import {
   createAutoUpdateCheckerHook,
   createChatHeadersHook,
   createDelegateTaskRetryHook,
+  createDelegationAutomationHook,
   createFilterAvailableSkillsHook,
   createJsonErrorRecoveryHook,
   createPhaseReminderHook,
@@ -28,6 +36,7 @@ import {
   createTaskSessionManagerHook,
   createTodoContinuationHook,
   ForegroundFallbackManager,
+  registerDelegationCommands,
 } from './hooks';
 import { processImageAttachments } from './hooks/image-hook';
 import { createInterviewManager } from './interview';
@@ -138,6 +147,9 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
   let foregroundFallback: ForegroundFallbackManager;
   let todoContinuationHook: ReturnType<typeof createTodoContinuationHook>;
   let taskSessionManagerHook: ReturnType<typeof createTaskSessionManagerHook>;
+  let delegationAutomationHook: ReturnType<
+    typeof createDelegationAutomationHook
+  >;
   let interviewManager: ReturnType<typeof createInterviewManager>;
   let presetManager: ReturnType<typeof createPresetManager>;
   let divoomManager: ReturnType<typeof createDivoomManager>;
@@ -148,12 +160,16 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
   >;
   let subtaskCommandManager: ReturnType<typeof createSubtaskCommandManager>;
   let subtaskState: ReturnType<typeof createSubtaskState>;
+  let codeGraphIndexAvailable = false;
+  let codeGraphGuidanceAvailable = false;
+  let codeGraphAgents = new Set<string>();
 
   // Counters for post-init health check (set inside try, checked outside)
   let toolCount = 0;
 
   try {
     config = loadPluginConfig(ctx.directory);
+    codeGraphIndexAvailable = hasCodeGraphIndex(ctx.directory);
 
     // Safety net: if a runtime preset was set via /preset command and
     // OpenCode ever fully re-runs the plugin function (not just the
@@ -313,6 +329,12 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
       readContextMaxFiles: config.sessionManager?.readContextMaxFiles ?? 8,
       shouldManageSession: (sessionID) =>
         sessionAgentMap.get(sessionID) === 'orchestrator',
+    });
+    delegationAutomationHook = createDelegationAutomationHook(ctx, {
+      postEditReview: config.delegationAutomation?.postEditReview ?? false,
+      postEditSimplify: config.delegationAutomation?.postEditSimplify ?? false,
+      mainSessionOnly: config.delegationAutomation?.mainSessionOnly ?? true,
+      getSessionAgent: (sessionID) => sessionAgentMap.get(sessionID),
     });
     interviewManager = createInterviewManager(ctx, config);
     presetManager = createPresetManager(ctx, config);
@@ -675,10 +697,17 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
         | Record<string, unknown>
         | undefined;
       const allMcpNames = Object.keys(mergedMcpConfig ?? mcps);
+      codeGraphGuidanceAvailable =
+        codeGraphIndexAvailable && hasCodeGraphMcp(mergedMcpConfig);
+      codeGraphAgents = new Set<string>();
 
       // For each agent, create permission rules based on their mcps list
       for (const [agentName, agentConfig] of Object.entries(agents)) {
-        const agentMcps = (agentConfig as { mcps?: string[] })?.mcps;
+        const mergedAgentConfig = configAgent[agentName] as
+          | { mcps?: string[] }
+          | undefined;
+        const agentMcps =
+          mergedAgentConfig?.mcps ?? (agentConfig as { mcps?: string[] })?.mcps;
         if (!agentMcps) continue;
 
         // Get or create agent permission config
@@ -696,6 +725,12 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
 
         // Parse mcps list with wildcard and exclusion support
         const allowedMcps = parseList(agentMcps, allMcpNames);
+        if (
+          codeGraphGuidanceAvailable &&
+          agentAllowsCodeGraph(agentMcps, allMcpNames)
+        ) {
+          codeGraphAgents.add(agentName);
+        }
 
         // Create permission rules for each MCP
         // MCP tools are named as <server>_<tool>, so we use <server>_*
@@ -734,6 +769,7 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
       interviewManager.registerCommand(opencodeConfig);
       presetManager.registerCommand(opencodeConfig);
       subtaskCommandManager.registerCommand(opencodeConfig);
+      registerDelegationCommands(opencodeConfig);
     },
 
     event: async (input) => {
@@ -807,6 +843,14 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
           event: {
             type: string;
             properties?: { info?: { id?: string }; sessionID?: string };
+          };
+        },
+      );
+      await delegationAutomationHook.handleEvent(
+        input as {
+          event: {
+            type: string;
+            properties?: { sessionID?: string; status?: { type?: string } };
           };
         },
       );
@@ -1024,12 +1068,44 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
         }
       }
 
+      if (
+        agentName &&
+        codeGraphGuidanceAvailable &&
+        codeGraphAgents.has(agentName)
+      ) {
+        const alreadyInjected = output.system.some(
+          (s) =>
+            typeof s === 'string' &&
+            s.includes('CodeGraph is available') &&
+            s.includes('codegraph_search'),
+        );
+        if (!alreadyInjected) {
+          output.system[0] =
+            `${CODEGRAPH_SYSTEM_GUIDANCE}\n\n${output.system[0] ?? ''}`.trim();
+        }
+      }
+
       // Collapse to single system message for provider compatibility.
       // Some providers (e.g. Qwen via VLLM/DashScope) reject multiple
       // system messages. Sub-hooks above may push additional entries; join
       // them back into one element so OpenCode emits a single system
       // message.
       collapseSystemInPlace(output.system);
+    },
+
+    'tool.definition': async (
+      input: { toolID: string },
+      output: { description: string },
+    ): Promise<void> => {
+      if (
+        !codeGraphGuidanceAvailable ||
+        input.toolID.toLowerCase() !== 'bash' ||
+        output.description.includes('codegraph_search')
+      ) {
+        return;
+      }
+
+      output.description = `${output.description}\n\n${CODEGRAPH_BASH_GUIDANCE}`;
     },
 
     // Inject phase reminder and filter available skills before sending to
@@ -1174,6 +1250,12 @@ const OhMyOpenCodeLite: Plugin = async (ctx) => {
           output as { output: unknown },
         ),
       );
+
+      await runPostToolHook('delegation-automation', async () => {
+        delegationAutomationHook.handleToolExecuteAfter(
+          input as { tool: string; sessionID?: string },
+        );
+      });
 
       if (input.tool.toLowerCase() === 'task') {
         divoomManager.onTaskEnd({

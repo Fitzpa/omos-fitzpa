@@ -7,7 +7,7 @@ describe('custom-agent creation', () => {
     const config: PluginConfig = {
       agents: {
         explorer: { model: 'openai/gpt-5.4-mini' },
-        reviewer: {
+        'custom-reviewer': {
           model: 'openai/gpt-5.5',
           prompt: 'You are the custom reviewer agent.',
         },
@@ -17,9 +17,11 @@ describe('custom-agent creation', () => {
     const agents = createAgents(config);
     const names = agents.map((agent) => agent.name);
 
-    expect(names).toContain('reviewer');
+    expect(names).toContain('custom-reviewer');
 
-    const customAgent = agents.find((agent) => agent.name === 'reviewer');
+    const customAgent = agents.find(
+      (agent) => agent.name === 'custom-reviewer',
+    );
     expect(customAgent).toBeDefined();
     expect(customAgent?.config.model).toBe('openai/gpt-5.5');
     expect(customAgent?.config.prompt).toBe(

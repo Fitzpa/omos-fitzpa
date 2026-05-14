@@ -17,6 +17,7 @@
 | [Multiplexer Integration](multiplexer-integration.md) | Real-time pane monitoring, layouts, troubleshooting |
 | [Todo Continuation](todo-continuation.md) | `auto_continue`, `/auto-continue`, cooldowns, safety gates |
 | [Preset Switching](preset-switching.md) | `/preset` command for runtime agent model switching |
+| [Delegation Automation](configuration.md#delegation-automation) | `/review-changes`, `/simplify-changes`, and opt-in post-edit prompts |
 | [Codemap Skill](codemap.md) | Hierarchical codemap generation |
 
 ## ⚙️ Config & Reference
@@ -33,3 +34,4 @@
 | Doc | Contents |
 |-----|----------|
 | [Author's Preset](authors-preset.md) | The exact config the author runs daily — OpenAI + Fireworks AI + GitHub Copilot |
+| [OpenCode Zen Presets](opencode-zen-presets.md) | Bundled `zen-max`, `zen-balanced`, and `zen-low` generated presets |

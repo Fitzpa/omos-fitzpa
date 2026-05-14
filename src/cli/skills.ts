@@ -57,7 +57,7 @@ export const RECOMMENDED_SKILLS: RecommendedSkill[] = [
 export const PERMISSION_ONLY_SKILLS: PermissionOnlySkill[] = [
   {
     name: 'requesting-code-review',
-    allowedAgents: ['oracle'],
+    allowedAgents: ['oracle', 'reviewer'],
     description:
       'Code review template for reviewer subagents in multi-step workflows',
   },

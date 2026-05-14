@@ -30,7 +30,7 @@ const AGENT_DESCRIPTIONS: Record<string, string> = {
 - Role: Parallel search specialist for discovering unknowns across the codebase
 - Permissions: Read files
 - Stats: 2x faster codebase search than orchestrator, 1/2 cost of orchestrator
-- Capabilities: Glob, grep, AST queries to locate files, symbols, patterns
+- Capabilities: CodeGraph-first symbol/file/call-flow discovery when available; glob, grep, AST queries as fallback to locate files, symbols, patterns
 - **Delegate when:** Need to discover what exists before planning • Parallel searches speed discovery • Need summarized map vs full contents • Broad/uncertain scope
 - **Don't delegate when:** Know the path and need actual content • Need full file anyway • Single specific lookup • About to edit the file`,
 
@@ -44,13 +44,13 @@ const AGENT_DESCRIPTIONS: Record<string, string> = {
 - **Rule of thumb:** "How does this library work?" → @librarian. "How does programming work?" → yourself.`,
 
   oracle: `@oracle
-- Role: Strategic advisor for high-stakes decisions and persistent problems, code reviewer
+- Role: Strategic advisor for high-stakes decisions and persistent problems
 - Permissions: Read files
 - Stats: 5x better decision maker, problem solver, investigator than orchestrator, 0.8x speed of orchestrator, same cost.
-- Capabilities: Deep architectural reasoning, system-level trade-offs, complex debugging, code review, simplification, maintainability review
-- **Delegate when:** Major architectural decisions with long-term impact • Problems persisting after 2+ fix attempts • High-risk multi-system refactors • Costly trade-offs (performance vs maintainability) • Complex debugging with unclear root cause • Security/scalability/data integrity decisions • Genuinely uncertain and cost of wrong choice is high • When a workflow calls for a **reviewer** subagent • Code needs simplification or YAGNI scrutiny
+- Capabilities: Deep architectural reasoning, system-level trade-offs, complex debugging, high-risk review, strategic simplification guidance
+- **Delegate when:** Major architectural decisions with long-term impact • Problems persisting after 2+ fix attempts • High-risk multi-system refactors • Costly trade-offs (performance vs maintainability) • Complex debugging with unclear root cause • Security/scalability/data integrity decisions • Genuinely uncertain and cost of wrong choice is high • Review requires architectural judgment or high-risk trade-offs
 - **Don't delegate when:** Routine decisions you're confident about • First bug fix attempt • Straightforward trade-offs • Tactical "how" vs strategic "should" • Time-sensitive good-enough decisions • Quick research/testing can answer
-- **Rule of thumb:** Need senior architect review? → @oracle. Need code review or simplification? → @oracle. Just do it and PR? → yourself.`,
+- **Rule of thumb:** Need senior architect review or hard debugging? → @oracle. Routine review/simplification? → use cheap specialists when available.`,
 
   designer: `@designer
 - Role: UI/UX specialist for intentional, polished experiences
@@ -66,9 +66,27 @@ const AGENT_DESCRIPTIONS: Record<string, string> = {
 - Permissions: Read/write files
 - Stats: 2x faster code edits, 1/2 cost of orchestrator, 0.8x quality of orchestrator
 - Tools/Constraints: Execution-focused—no research, no architectural decisions
-- **Delegate when:** For implementation work, think and triage first. If the change is non-trivial or multi-file, hand bounded execution to @fixer • Writing or updating tests • Tasks that touch test files, fixtures, mocks, or test helpers. Parallelization benefits: Task involves multiple folders and multiple files modificaiton, scoping work per folder and spawning parallel @fixers for each folder.
-- **Don't delegate when:** Needs discovery/research/decisions • Single small change (<20 lines, one file) • Unclear requirements needing iteration • Explaining to fixer > doing • Tight integration with your current work • Sequential dependencies
-- **Rule of thumb:** Explaining > doing? → yourself. Test file modifications and bounded implementation work usually go to @fixer. Bigger or lots of edits, splitting makes sense, parallelized by spawning @fixers per certain scope.`,
+- **Delegate when:** For implementation work, think and triage first. Hand bounded execution to @fixer, including small mechanical edits when setup/context is clear • Writing or updating tests • Tasks that touch test files, fixtures, mocks, or test helpers. Parallelization benefits: Task involves multiple folders and multiple files modificaiton, scoping work per folder and spawning parallel @fixers for each folder.
+- **Don't delegate when:** Needs discovery/research/decisions • Unclear requirements needing iteration • Explaining to fixer > doing • Tight integration with your current work • Sequential dependencies
+- **Rule of thumb:** Test file modifications and bounded implementation work usually go to @fixer. Batch multiple tiny implementation edits into one @fixer call when possible; pair with cleanup specialist when available.`,
+
+  reviewer: `@reviewer
+- Role: Read-only code review specialist for changed code and diffs
+- Permissions: Read files
+- Stats: 2x faster routine review than orchestrator, 1/2 cost of orchestrator
+- Capabilities: Diff-focused bug, correctness, security, regression, missing-test, and maintainability review
+- **Delegate when:** Reviewing current changes • User asks for review • Need a second pass on bounded edits • Checking test coverage or regressions • Routine review that does not require architecture-level judgment
+- **Don't delegate when:** Review needs strategic architecture, data integrity, security design, or persistent hard debugging judgment; escalate those to @oracle
+- **Rule of thumb:** Changed-code review? → @reviewer. High-risk architectural review? → @oracle.`,
+
+  simplifier: `@simplifier
+- Role: Write-enabled behavior-preserving cleanup specialist for recently changed code
+- Permissions: Read/write files
+- Stats: 2x faster cleanup than orchestrator, 1/2 cost of orchestrator
+- Capabilities: Reduces unnecessary nesting, redundancy, unclear control flow, and comments in changed code without changing behavior
+- **Delegate when:** User asks to simplify/clean up • Recently edited code can be made clearer • Multiple tiny cleanup edits can be batched • YAGNI cleanup is local and behavior-preserving
+- **Don't delegate when:** Behavior may change • Public APIs/error messages/ordering are uncertain • Cleanup requires broad design judgment; escalate those to @oracle
+- **Rule of thumb:** Local behavior-preserving cleanup? → @simplifier. Strategic simplification? → @oracle.`,
 
   council: `@council
 - Role: Multi-LLM consensus engine that runs several councillors, synthesizes their views, and returns a structured council report.
@@ -95,7 +113,8 @@ const AGENT_DESCRIPTIONS: Record<string, string> = {
 // Validation routing lines that reference agents
 const VALIDATION_ROUTING = [
   '- Route UI/UX validation and review to @designer',
-  '- Route code review, simplification, maintainability review, and YAGNI checks to @oracle',
+  '- Route code review to @reviewer and behavior-preserving cleanup/simplification to @simplifier',
+  '- Route architecture-level review, hard debugging, and high-risk trade-offs to @oracle',
   '- Route test writing, test updates, and changes touching test files to @fixer',
   '- Route visual/media analysis and interpretation to @observer',
   '- If a request spans multiple lanes, delegate only the lanes that add clear value',
@@ -106,7 +125,13 @@ const PARALLEL_DELEGATION_EXAMPLES = [
   '- Multiple @explorer searches across different domains?',
   '- @explorer + @librarian research in parallel?',
   '- Multiple @fixer instances for faster, scoped implementation?',
+  '- @reviewer + @simplifier after a bounded implementation?',
   '- @observer + @explorer in parallel (visual analysis + code search)?',
+];
+
+const DELEGATION_EFFICIENCY_LINES = [
+  '- Delegate bounded, mechanical, test, cleanup, and review tasks to cheap specialists even when small.',
+  '- Batch multiple tiny edits into one @fixer or @simplifier call when possible.',
 ];
 
 /**
@@ -130,6 +155,14 @@ export function buildOrchestratorPrompt(disabledAgents?: Set<string>): string {
 
   // Filter parallel delegation examples — remove lines mentioning any disabled agent
   const enabledParallelExamples = PARALLEL_DELEGATION_EXAMPLES.filter(
+    (line) => {
+      const mentions = [...line.matchAll(/@(\w+)/g)].map((m) => m[1]);
+      if (mentions.length === 0) return true;
+      return mentions.every((name) => !disabledAgents?.has(name));
+    },
+  ).join('\n');
+
+  const enabledDelegationEfficiency = DELEGATION_EFFICIENCY_LINES.filter(
     (line) => {
       const mentions = [...line.matchAll(/@(\w+)/g)].map((m) => m[1]);
       if (mentions.length === 0) return true;
@@ -166,6 +199,11 @@ Choose the path that optimizes all four.
 - Provide context summaries, let specialists read what they need
 - Brief user on delegation goal before each call
 - Skip delegation if overhead ≥ doing it yourself
+${enabledDelegationEfficiency}
+
+**CodeGraph guidance:**
+- When CodeGraph is available, route broad code discovery to @explorer and tell delegated agents to use CodeGraph before broad grep/find/ls scans.
+- Prefer CodeGraph for symbol, file, caller/callee, impact, and exploration queries; fall back to normal tools for exact file contents, text patterns, tests, builds, git, or stale/missing index results.
 
 ## 4. Split and Parallelize
 Can tasks be split into subtasks and run in parallel?

@@ -187,6 +187,60 @@
             "fallback2",
             "fallback3"
           ]
+        },
+        "reviewer": {
+          "type": "object",
+          "properties": {
+            "primary": {
+              "type": "string",
+              "pattern": "^[^/\\s]+\\/[^\\s]+$"
+            },
+            "fallback1": {
+              "type": "string",
+              "pattern": "^[^/\\s]+\\/[^\\s]+$"
+            },
+            "fallback2": {
+              "type": "string",
+              "pattern": "^[^/\\s]+\\/[^\\s]+$"
+            },
+            "fallback3": {
+              "type": "string",
+              "pattern": "^[^/\\s]+\\/[^\\s]+$"
+            }
+          },
+          "required": [
+            "primary",
+            "fallback1",
+            "fallback2",
+            "fallback3"
+          ]
+        },
+        "simplifier": {
+          "type": "object",
+          "properties": {
+            "primary": {
+              "type": "string",
+              "pattern": "^[^/\\s]+\\/[^\\s]+$"
+            },
+            "fallback1": {
+              "type": "string",
+              "pattern": "^[^/\\s]+\\/[^\\s]+$"
+            },
+            "fallback2": {
+              "type": "string",
+              "pattern": "^[^/\\s]+\\/[^\\s]+$"
+            },
+            "fallback3": {
+              "type": "string",
+              "pattern": "^[^/\\s]+\\/[^\\s]+$"
+            }
+          },
+          "required": [
+            "primary",
+            "fallback1",
+            "fallback2",
+            "fallback3"
+          ]
         }
       },
       "required": [
@@ -599,6 +653,26 @@
         }
       }
     },
+    "delegationAutomation": {
+      "type": "object",
+      "properties": {
+        "postEditReview": {
+          "default": false,
+          "description": "Prompt the current session to run /review-changes after edits.",
+          "type": "boolean"
+        },
+        "postEditSimplify": {
+          "default": false,
+          "description": "Prompt the current session to run /simplify-changes after edits.",
+          "type": "boolean"
+        },
+        "mainSessionOnly": {
+          "default": true,
+          "description": "Only run post-edit automation in orchestrator/main sessions.",
+          "type": "boolean"
+        }
+      }
+    },
     "fallback": {
       "type": "object",
       "properties": {
@@ -656,6 +730,20 @@
               }
             },
             "fixer": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "reviewer": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "simplifier": {
               "minItems": 1,
               "type": "array",
               "items": {

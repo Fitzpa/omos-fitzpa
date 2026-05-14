@@ -1,4 +1,5 @@
 import type { PluginInput } from '@opencode-ai/plugin';
+import { getAgentConfigs } from '../agents';
 import type {
   AgentOverrideConfig,
   ModelEntry,
@@ -188,7 +189,13 @@ export function createPresetManager(ctx: PluginInput, config: PluginConfig) {
 
     try {
       await ctx.client.config.update({
-        body: { agent: allUpdates },
+        body: {
+          agent: buildAgentUpdate(allUpdates) as NonNullable<
+            Parameters<typeof ctx.client.config.update>[0]
+          > extends { body: { agent?: infer Agent } }
+            ? Agent
+            : never,
+        },
       });
 
       const snapshot = readTuiSnapshot();
@@ -285,6 +292,36 @@ export function createPresetManager(ctx: PluginInput, config: PluginConfig) {
     }
 
     return agentConfig;
+  }
+
+  /**
+   * OpenCode treats config.update({ agent }) as a live replacement of the
+   * agent table before plugin config hooks finish re-running. Send complete
+   * agent registrations so default_agent and @agent routing never observe a
+   * partial model-only table during runtime preset switches.
+   */
+  function buildAgentUpdate(
+    updates: Record<
+      string,
+      {
+        model?: string;
+        temperature?: number;
+        variant?: string;
+        options?: Record<string, unknown>;
+      }
+    >,
+  ): Record<string, unknown> {
+    const fullAgents = getAgentConfigs(config);
+    for (const [agentName, update] of Object.entries(updates)) {
+      const existing =
+        (fullAgents[agentName] as Record<string, unknown> | undefined) ?? {};
+      fullAgents[agentName] = {
+        ...existing,
+        ...update,
+      } as (typeof fullAgents)[string];
+    }
+
+    return fullAgents as Record<string, unknown>;
   }
 
   /**

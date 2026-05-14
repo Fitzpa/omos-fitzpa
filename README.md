@@ -46,7 +46,7 @@ manual setups, add `oh-my-opencode-slim` to the `plugin` array in both
 
 ### Getting Started
 
-The installer generates both OpenAI and OpenCode Go presets, with OpenAI active by default. OpenAI uses `openai/gpt-5.5` for the higher-judgment agents and `openai/gpt-5.4-mini` for the faster scoped agents. To make OpenCode Go active during install, run `bunx oh-my-opencode-slim@latest install --preset=opencode-go` or change the default preset name in `~/.config/opencode/oh-my-opencode-slim.json` after installation.
+The installer generates OpenAI, OpenCode Go, and OpenCode Zen presets, with OpenAI active by default. OpenAI uses `openai/gpt-5.5` for the higher-judgment agents and `openai/gpt-5.4-mini` for the faster scoped agents. To make another generated preset active during install, run `bunx oh-my-opencode-slim@latest install --preset=opencode-go`, `--preset=zen-max`, `--preset=zen-balanced`, or `--preset=zen-low`, or change the default preset name in `~/.config/opencode/oh-my-opencode-slim.json` after installation.
 
 Then:
 
@@ -67,7 +67,7 @@ Then:
 > [!TIP]
 > It's **recommended** to understand how automatic delegation works. The **[Orchestrator prompt](https://github.com/alvinunreal/oh-my-opencode-slim/blob/master/src/agents/orchestrator.ts#L28)** contains the delegation rules, specialist routing logic, and the thresholds for when the main agent should hand work off to subagents. You can alway delegate manually by calling a subagent via: `@agentName <task>`
 
-The default generated configuration includes both `openai` and `opencode-go` presets.
+The default generated configuration includes `openai`, `opencode-go`, `zen-max`, `zen-balanced`, and `zen-low` presets.
 
 ```jsonc
 {
@@ -90,10 +90,38 @@ The default generated configuration includes both `openai` and `opencode-go` pre
       "explorer": { "model": "opencode-go/minimax-m2.7", "skills": [], "mcps": [] },
       "designer": { "model": "opencode-go/kimi-k2.6", "variant": "medium", "skills": [ "agent-browser" ], "mcps": [] },
       "fixer": { "model": "opencode-go/deepseek-v4-flash", "variant": "high", "skills": [], "mcps": [] }
+    },
+    "zen-balanced": {
+      "orchestrator": {
+        "model": [
+          { "id": "opencode/glm-5.1", "variant": "medium" },
+          { "id": "opencode/gpt-5.3-codex", "variant": "medium" },
+          { "id": "opencode/kimi-k2.6", "variant": "medium" },
+          { "id": "opencode/gpt-5.4-mini", "variant": "medium" }
+        ],
+        "skills": ["*"],
+        "mcps": ["*", "!context7"]
+      },
+      "oracle": {
+        "model": [
+          { "id": "opencode/gpt-5.3-codex", "variant": "high" },
+          { "id": "opencode/glm-5.1", "variant": "high" },
+          { "id": "opencode/kimi-k2.6", "variant": "high" },
+          { "id": "opencode/claude-haiku-4-5", "variant": "high" }
+        ],
+        "skills": ["simplify"],
+        "mcps": []
+      }
     }
   }
 }
 ```
+
+The Zen presets use the `opencode/...` provider IDs from OpenCode Zen. `zen-max`
+prefers the strongest non-Pro models while avoiding `gpt-5.4-pro`,
+`gpt-5.5-pro`, and `claude-opus-4-7`; `zen-balanced` uses efficient paid models;
+`zen-low` keeps paid cheap models first and free models late in fallback chains
+to reduce rate-limit risk.
 
 ### For Alternative Providers
 
@@ -427,6 +455,36 @@ If any agent fails to respond, check your provider authentication and config fil
 
 ---
 
+### 08. Reviewer: The Watchful Auditor
+
+**Read-only changed-code review** — reviews staged, unstaged, and untracked
+working tree changes for bugs, correctness, security, regressions, and missing
+tests. Use `@reviewer` directly or run `/review-changes`.
+
+- Default model: `openai/gpt-5.4-mini`
+- Best for routine review of bounded changes
+- Use `@oracle` instead when review requires architecture-level judgment or
+  high-risk trade-off analysis
+
+Prompt: [`src/agents/reviewer.ts`](src/agents/reviewer.ts)
+
+---
+
+### 09. Simplifier: The Careful Refiner
+
+**Behavior-preserving cleanup** — simplifies recently changed code without
+changing public APIs, error messages, execution order, async behavior, or side
+effects. Use `@simplifier` directly or run `/simplify-changes`.
+
+- Default model: `openai/gpt-5.4-mini`
+- Best for local cleanup, reduced nesting, redundant checks, and clearer
+  changed code
+- Skips changes when behavior preservation is uncertain
+
+Prompt: [`src/agents/simplifier.ts`](src/agents/simplifier.ts)
+
+---
+
 ## Optional Agents
 
 ### Observer: The Silent Witness
@@ -491,6 +549,7 @@ Use this section as a map: start with installation, then jump to features, confi
 | **[Todo Continuation](docs/todo-continuation.md)** | Auto-continue orchestrator sessions with cooldowns and safety checks |
 | **[Preset Switching](docs/preset-switching.md)** | Switch agent model presets at runtime with `/preset` |
 | **[Subtask](docs/subtask.md)** | Run a bounded child worker with `/subtask` and return a structured summary to the main session |
+| **[Configuration](docs/configuration.md#delegation-automation)** | Optional post-edit `/review-changes` and `/simplify-changes` automation |
 | **[Codemap](docs/codemap.md)** | Generate hierarchical codemaps to understand large codebases faster |
 | **[Clonedeps](docs/clonedeps.md)** | Clone selected dependency source into an ignored local workspace for inspection |
 | **[Interview](docs/interview.md)** | Turn rough ideas into a structured markdown spec through a browser-based Q&A flow |
@@ -513,6 +572,7 @@ Use this section as a map: start with installation, then jump to features, confi
 | **[Author's Preset](docs/authors-preset.md)** | The author's daily mixed-provider setup |
 | **[$30 Preset](docs/thirty-dollars-preset.md)** | A budget mixed-provider setup for around $30/month |
 | **[OpenCode Go Preset](docs/opencode-go-preset.md)** | The bundled `opencode-go` preset generated by the installer |
+| **[OpenCode Zen Presets](docs/opencode-zen-presets.md)** | Bundled `zen-max`, `zen-balanced`, and `zen-low` generated presets |
 
 ---
 

@@ -197,6 +197,10 @@ export function mergePluginConfigs(
     interview: deepMerge(base.interview, override.interview),
     sessionManager: deepMerge(base.sessionManager, override.sessionManager),
     divoom: deepMerge(base.divoom, override.divoom),
+    delegationAutomation: deepMerge(
+      base.delegationAutomation,
+      override.delegationAutomation,
+    ),
     fallback: deepMerge(base.fallback, override.fallback),
     council: deepMerge(base.council, override.council),
   };

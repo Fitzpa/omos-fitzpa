@@ -9,6 +9,8 @@ const FALLBACK_AGENT_NAMES = [
   'explorer',
   'librarian',
   'fixer',
+  'reviewer',
+  'simplifier',
 ] as const;
 
 const MANUAL_AGENT_NAMES = [
@@ -18,6 +20,8 @@ const MANUAL_AGENT_NAMES = [
   'explorer',
   'librarian',
   'fixer',
+  'reviewer',
+  'simplifier',
 ] as const;
 
 export const ProviderModelIdSchema = z
@@ -57,6 +61,8 @@ export const ManualPlanSchema = z
     explorer: ManualAgentPlanSchema,
     librarian: ManualAgentPlanSchema,
     fixer: ManualAgentPlanSchema,
+    reviewer: ManualAgentPlanSchema.optional(),
+    simplifier: ManualAgentPlanSchema.optional(),
   })
   .strict();
 
@@ -74,6 +80,8 @@ const FallbackChainsSchema = z
     explorer: AgentModelChainSchema.optional(),
     librarian: AgentModelChainSchema.optional(),
     fixer: AgentModelChainSchema.optional(),
+    reviewer: AgentModelChainSchema.optional(),
+    simplifier: AgentModelChainSchema.optional(),
   })
   .catchall(AgentModelChainSchema);
 
@@ -252,6 +260,27 @@ export type TodoContinuationConfig = z.infer<
   typeof TodoContinuationConfigSchema
 >;
 
+export const DelegationAutomationConfigSchema = z.object({
+  postEditReview: z
+    .boolean()
+    .default(false)
+    .describe('Prompt the current session to run /review-changes after edits.'),
+  postEditSimplify: z
+    .boolean()
+    .default(false)
+    .describe(
+      'Prompt the current session to run /simplify-changes after edits.',
+    ),
+  mainSessionOnly: z
+    .boolean()
+    .default(true)
+    .describe('Only run post-edit automation in orchestrator/main sessions.'),
+});
+
+export type DelegationAutomationConfig = z.infer<
+  typeof DelegationAutomationConfigSchema
+>;
+
 export const FailoverConfigSchema = z.object({
   enabled: z.boolean().default(true),
   timeoutMs: z.number().min(0).default(15000),
@@ -335,6 +364,7 @@ export const PluginConfigSchema = z
     sessionManager: SessionManagerConfigSchema.optional(),
     divoom: DivoomConfigSchema.optional(),
     todoContinuation: TodoContinuationConfigSchema.optional(),
+    delegationAutomation: DelegationAutomationConfigSchema.optional(),
     fallback: FailoverConfigSchema.optional(),
     council: CouncilConfigSchema.optional(),
   })

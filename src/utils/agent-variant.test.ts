@@ -209,20 +209,20 @@ describe('rewriteDisplayNameMentions', () => {
     const config = {
       agents: {
         'custom-reviewer': {
-          displayName: 'reviewer',
+          displayName: 'auditreview',
           variant: 'high',
           model: 'openai/gpt-5.5',
         },
       },
     } as PluginConfig;
 
-    expect(resolveRuntimeAgentName(config, '@reviewer')).toBe(
+    expect(resolveRuntimeAgentName(config, '@auditreview')).toBe(
       'custom-reviewer',
     );
     expect(
-      rewriteDisplayNameMentions(config, 'ask @reviewer for details'),
+      rewriteDisplayNameMentions(config, 'ask @auditreview for details'),
     ).toBe('ask @custom-reviewer for details');
-    expect(resolveAgentVariant(config, '@reviewer')).toBe('high');
+    expect(resolveAgentVariant(config, '@auditreview')).toBe('high');
   });
 });
 

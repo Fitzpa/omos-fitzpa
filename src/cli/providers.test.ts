@@ -12,6 +12,9 @@ describe('providers', () => {
       'openai',
       'opencode-go',
       'zai-plan',
+      'zen-balanced',
+      'zen-low',
+      'zen-max',
     ]);
   });
 
@@ -32,6 +35,9 @@ describe('providers', () => {
     expect((config.presets as any)['opencode-go'].observer.model).toBe(
       'opencode-go/kimi-k2.6',
     );
+    expect((config.presets as any)['zen-max']).toBeDefined();
+    expect((config.presets as any)['zen-balanced']).toBeDefined();
+    expect((config.presets as any)['zen-low']).toBeDefined();
     const agents = (config.presets as any).openai;
     expect(agents).toBeDefined();
     expect(agents.orchestrator.model).toBe('openai/gpt-5.5');
@@ -87,6 +93,101 @@ describe('providers', () => {
     expect(agents.fixer.model).toBe('opencode-go/deepseek-v4-flash');
     expect(agents.fixer.variant).toBe('high');
     expect(agents.observer.model).toBe('opencode-go/kimi-k2.6');
+  });
+
+  test('generateLiteConfig can set Zen presets as active presets', () => {
+    for (const preset of ['zen-max', 'zen-balanced', 'zen-low']) {
+      const config = generateLiteConfig({
+        hasTmux: false,
+        installSkills: false,
+        installCustomSkills: false,
+        preset,
+        reset: false,
+      });
+
+      expect(config.preset).toBe(preset);
+      expect((config.presets as any)[preset]).toBeDefined();
+    }
+  });
+
+  test('Zen max preset avoids excluded top-tier models', () => {
+    const config = generateLiteConfig({
+      hasTmux: false,
+      installSkills: false,
+      installCustomSkills: false,
+      reset: false,
+    });
+
+    const blockedModels = new Set([
+      'opencode/gpt-5.4-pro',
+      'opencode/gpt-5.5-pro',
+      'opencode/claude-opus-4-7',
+    ]);
+    const preset = (config.presets as any)['zen-max'];
+
+    for (const agentConfig of Object.values(preset) as any[]) {
+      const model = agentConfig.model;
+      const modelIds = Array.isArray(model)
+        ? model.map((entry) => (typeof entry === 'string' ? entry : entry.id))
+        : [model];
+
+      for (const modelId of modelIds) {
+        expect(blockedModels.has(modelId)).toBe(false);
+      }
+    }
+  });
+
+  test('Zen balanced preset uses the requested efficient model pool', () => {
+    const config = generateLiteConfig({
+      hasTmux: false,
+      installSkills: false,
+      installCustomSkills: false,
+      reset: false,
+    });
+
+    const allowedModels = new Set([
+      'opencode/glm-5.1',
+      'opencode/gpt-5.4-mini',
+      'opencode/kimi-k2.6',
+      'opencode/gpt-5.3-codex',
+      'opencode/gemini-3-flash',
+      'opencode/minimax-m2.5',
+      'opencode/minimax-m2.7',
+      'opencode/claude-haiku-4-5',
+    ]);
+    const preset = (config.presets as any)['zen-balanced'];
+
+    for (const agentConfig of Object.values(preset) as any[]) {
+      const model = agentConfig.model;
+      const modelIds = Array.isArray(model)
+        ? model.map((entry) => (typeof entry === 'string' ? entry : entry.id))
+        : [model];
+
+      for (const modelId of modelIds) {
+        expect(allowedModels.has(modelId)).toBe(true);
+      }
+    }
+  });
+
+  test('Zen low preset includes paid primaries before free fallbacks', () => {
+    const config = generateLiteConfig({
+      hasTmux: false,
+      installSkills: false,
+      installCustomSkills: false,
+      reset: false,
+    });
+
+    const preset = (config.presets as any)['zen-low'];
+
+    expect(preset.orchestrator.model[0]).toEqual({
+      id: 'opencode/gemini-3-flash',
+      variant: 'low',
+    });
+    expect(preset.orchestrator.model).toContain(
+      'opencode/deepseek-v4-flash-free',
+    );
+    expect(preset.explorer.model[0]).toBe('opencode/minimax-m2.5');
+    expect(preset.explorer.model).toContain('opencode/minimax-m2.5-free');
   });
 
   test('generateLiteConfig rejects unsupported preset', () => {

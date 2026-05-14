@@ -122,6 +122,9 @@ Presets can also be switched at runtime without restarting using the `/preset` c
 | `sessionManager.maxSessionsPerAgent` | integer | `2` | Maximum remembered resumable child sessions per specialist type in the current orchestrator session (1–10). See [Session Management](session-management.md) |
 | `sessionManager.readContextMinLines` | integer | `10` | Minimum number of lines read from a file before it appears in resumable-session context (0–1000) |
 | `sessionManager.readContextMaxFiles` | integer | `8` | Maximum number of recent read-context files shown per remembered child session (0–50) |
+| `delegationAutomation.postEditReview` | boolean | `false` | After tracked edit/write activity, prompt the current session to run `/review-changes` when it becomes idle |
+| `delegationAutomation.postEditSimplify` | boolean | `false` | After tracked edit/write activity, prompt the current session to run `/simplify-changes` when it becomes idle |
+| `delegationAutomation.mainSessionOnly` | boolean | `true` | Only run post-edit automation in the orchestrator/main session |
 | `disabled_mcps` | string[] | `[]` | MCP server IDs to disable globally |
 | `fallback.enabled` | boolean | `false` | Enable model failover on timeout/error |
 | `fallback.timeoutMs` | number | `15000` | Time before aborting and trying next model |
@@ -145,6 +148,17 @@ Presets can also be switched at runtime without restarting using the `/preset` c
 | `interview.autoOpenBrowser` | boolean | `true` | Automatically open the interview UI in your default browser during interactive runs; suppressed in tests and CI |
 | `interview.port` | integer | `0` | Interview server port (0–65535). `0` = OS-assigned random port (per-session mode). Any value > 0 enables [dashboard mode](interview.md#dashboard-mode) |
 | `interview.dashboard` | boolean | `false` | Enable [dashboard mode](interview.md#dashboard-mode) on the default port (43211). Setting `port` > 0 also enables dashboard mode. If both are set, `port` takes precedence |
+
+### CodeGraph Guidance
+
+There is no OMOS config option for CodeGraph. Guidance turns on automatically
+when the current project has `.codegraph/codegraph.db` and OpenCode's merged
+MCP config includes a server named `codegraph`.
+
+Agents only receive the runtime guidance when their `mcps` list allows
+`codegraph`, using the same wildcard and exclusion syntax documented in
+[MCPs](mcps.md). See [MCPs](mcps.md#custom-codegraph-mcp) for setup notes and
+recommended per-agent access.
 
 ### Council configuration note
 
@@ -172,6 +186,33 @@ automatically.
 > Pinned plugin entries in `opencode.json` (for example
 > `"oh-my-opencode-slim@1.0.1"`) are the true version lock. Those stay pinned
 > regardless of `autoUpdate`.
+
+### Delegation Automation
+
+`@reviewer` and `@simplifier` are available by default. Manual commands are:
+
+- `/review-changes` — gather working tree status, staged diff, unstaged diff,
+  and untracked files, then route the review to `@reviewer`.
+- `/simplify-changes` — gather the same working tree context, then route
+  behavior-preserving cleanup to `@simplifier`.
+
+Post-edit automation is opt-in and disabled by default:
+
+```jsonc
+{
+  "presets": {
+    "openai": {
+      "reviewer": { "model": "openai/gpt-5.4-mini", "variant": "low" },
+      "simplifier": { "model": "openai/gpt-5.4-mini", "variant": "low" }
+    }
+  },
+  "delegationAutomation": {
+    "postEditReview": false,
+    "postEditSimplify": false,
+    "mainSessionOnly": true
+  }
+}
+```
 
 ### Divoom Display Integration
 

@@ -1,6 +1,7 @@
 # Configuration Reference
 
-Complete reference for all configuration files and options in oh-my-opencode-slim.
+Complete reference for `omos-fitzpa` configuration files and options. The plugin
+keeps the `oh-my-opencode-slim.*` config and schema filenames for compatibility.
 
 ---
 
@@ -15,7 +16,9 @@ Complete reference for all configuration files and options in oh-my-opencode-sli
 
 > **💡 JSONC recommended:** Use the `.jsonc` extension to add comments and trailing commas. If both `.jsonc` and `.json` exist, `.jsonc` takes precedence.
 
-If OmO-slim detects an invalid plugin config for the current project, the TUI sidebar shows a warning. Run `oh-my-opencode-slim doctor` from your project root for full diagnostics.
+If `omos-fitzpa` detects an invalid plugin config for the current project, the
+TUI sidebar shows a warning. Run `bunx omos-fitzpa@latest doctor` from your
+project root for full diagnostics.
 
 ---
 
@@ -184,8 +187,9 @@ see that a new version is available, but the plugin won't install it
 automatically.
 
 > Pinned plugin entries in `opencode.json` (for example
-> `"oh-my-opencode-slim@1.0.1"`) are the true version lock. Those stay pinned
-> regardless of `autoUpdate`.
+> `"omos-fitzpa@1.1.0"`) are the true version lock. Those stay pinned regardless
+> of `autoUpdate`. Older `"oh-my-opencode-slim@..."` entries are legacy package
+> pins; rerun `bunx omos-fitzpa@latest install` to migrate them.
 
 ### Delegation Automation
 

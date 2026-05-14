@@ -1,7 +1,7 @@
 # Installation Guide
 
 Complete installation instructions for `omos-fitzpa`, the published fork of
-oh-my-opencode-slim.
+`oh-my-opencode-slim`.
 
 ## Table of Contents
 
@@ -43,7 +43,9 @@ The installer supports the following options:
 
 ### Non-Destructive Behavior
 
-By default, the installer is non-destructive. If an `oh-my-opencode-slim.json` configuration file already exists, the installer will **not** overwrite it. Instead, it will display a message:
+By default, the installer is non-destructive. If an
+`oh-my-opencode-slim.json` configuration file already exists, the installer will
+**not** overwrite it. Instead, it will display a message:
 
 ```
 [i] Configuration already exists at ~/.config/opencode/oh-my-opencode-slim.json. Use --reset to overwrite.
@@ -55,11 +57,20 @@ To force overwrite of your existing configuration, use the `--reset` flag:
 bunx omos-fitzpa@latest install --reset
 ```
 
-**Note:** When using `--reset`, the installer creates a `.bak` backup file before overwriting, so your previous configuration is preserved.
+**Note:** When using `--reset`, the installer creates a `.bak` backup file
+before overwriting, so your previous configuration is preserved.
 
 ### After Installation
 
-The installer generates OpenAI, OpenCode Go, and OpenCode Zen presets, with OpenAI active by default (using `gpt-5.5` and `gpt-5.4-mini` models). To make OpenCode Go active during install, run `bunx omos-fitzpa@latest install --preset=opencode-go`. To use OpenCode Zen, choose `--preset=zen-max`, `--preset=zen-balanced`, or `--preset=zen-low`. The OpenCode Go preset uses GLM-5.1 for Orchestrator, so the installer also enables Observer with `opencode-go/kimi-k2.6` for visual analysis. To switch providers later or build a mixed setup, use **[Configuration Reference](configuration.md)** for the full option reference and the preset docs for copyable examples.
+The installer generates `openai`, `opencode-go`, `zen-max`, `zen-balanced`,
+and `zen-low` presets, with `openai` active by default (using `gpt-5.5` and
+`gpt-5.4-mini` models). To make OpenCode Go active during install, run
+`bunx omos-fitzpa@latest install --preset=opencode-go`. To use OpenCode Zen,
+choose `--preset=zen-max`, `--preset=zen-balanced`, or `--preset=zen-low`. The
+OpenCode Go preset uses GLM-5.1 for Orchestrator, so the installer also enables
+Observer with `opencode-go/kimi-k2.6` for visual analysis. To switch providers
+later or build a mixed setup, use **[Configuration Reference](configuration.md)**
+for the full option reference and the preset docs for copyable examples.
 
 Then:
 
@@ -81,7 +92,11 @@ Then run OpenCode and verify the agents:
 ping all agents
 ```
 
-> **💡 Tip: Models are fully customizable.** The installer sets sensible defaults, but you can assign *any* model to *any* agent. Edit `~/.config/opencode/oh-my-opencode-slim.json` (or `.jsonc` for comments support) to override models, adjust reasoning effort, or disable agents entirely.
+> **💡 Tip: Models are fully customizable.** The installer sets sensible
+> defaults, but you can assign *any* model to *any* agent. Edit
+> `~/.config/opencode/oh-my-opencode-slim.json` (or `.jsonc` for comments
+> support) to override models, adjust reasoning effort, or disable agents
+> entirely.
 
 ### Alternative: Ask Any Coding Agent
 
@@ -155,7 +170,8 @@ bunx omos-fitzpa@latest install --reset
 ```
 
 The installer automatically:
-- Adds the plugin to `~/.config/opencode/opencode.json`
+- Adds `omos-fitzpa` to `~/.config/opencode/opencode.json`
+- Adds `omos-fitzpa` to `~/.config/opencode/tui.json` for the sidebar plugin
 - Disables default OpenCode agents
 - Enables OpenCode LSP integration when no explicit `lsp` setting exists
 - Generates agent model mappings in `~/.config/opencode/oh-my-opencode-slim.json` (or `.jsonc`)

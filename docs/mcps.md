@@ -1,6 +1,8 @@
 # MCP Servers
 
-Built-in Model Context Protocol (MCP) servers ship with oh-my-opencode-slim and give agents access to external tools — web search, library documentation, and code search.
+Built-in Model Context Protocol (MCP) servers ship with `omos-fitzpa` and give
+agents access to external tools: web search, library documentation, and code
+search.
 
 ---
 
@@ -16,8 +18,8 @@ Built-in Model Context Protocol (MCP) servers ship with oh-my-opencode-slim and 
 
 ## Custom CodeGraph MCP
 
-oh-my-opencode-slim does not bundle a CodeGraph MCP server, but it recognizes a
-custom OpenCode MCP named `codegraph`.
+`omos-fitzpa` does not bundle a CodeGraph MCP server, but it recognizes a custom
+OpenCode MCP named `codegraph`.
 
 When both conditions are true, OMOS automatically adds CodeGraph guidance to
 eligible agents:
@@ -64,7 +66,10 @@ configured.
 | `oracle` | none |
 | `explorer` | none |
 | `fixer` | none |
- | `councillor` | none |
+| `reviewer` | none |
+| `simplifier` | none |
+| `council` | none |
+| `councillor` | none |
 
 ---
 

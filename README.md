@@ -1,6 +1,6 @@
 <div align="center">
   <img src="img/team.jpeg" alt="Pantheon agents" style="border-radius: 10px;">
-  <p><i>Seven divine beings emerged from the dawn of code, each an immortal master of their craft await your command to forge order from chaos and build what was once thought impossible.</i></p>
+  <p><i>A specialist team emerged from the dawn of code, each an immortal master of their craft awaiting your command to forge order from chaos and build what was once thought impossible.</i></p>
   <p><b>Open Multi Agent Suite</b> · Mix any models · Auto delegate tasks</p>
 
   <p><sub>by <b>Boring Dystopia Development</b></sub></p>
@@ -15,9 +15,24 @@
 
 ## What's This Plugin
 
-oh-my-opencode-slim is an agent orchestration plugin for OpenCode. It includes a built-in team of specialized agents that can scout a codebase, look up fresh documentation, review architecture, handle UI work, and execute well-scoped implementation tasks under one orchestrator.
+`omos-fitzpa` is the published npm package and CLI for this maintained fork of
+`oh-my-opencode-slim`, an agent orchestration plugin for OpenCode. It includes a
+built-in team of specialized agents that can scout a codebase, look up fresh
+documentation, review architecture, handle UI work, and execute well-scoped
+implementation tasks under one orchestrator.
 
 The main idea is simple: instead of forcing one model to do everything, the plugin routes each part of the job to the agent best suited for it, balancing **quality, speed and cost**.
+
+Current capabilities include:
+
+- `@reviewer` for read-only changed-code review and `/review-changes`
+- `@simplifier` for behavior-preserving cleanup and `/simplify-changes`
+- optional post-edit automation that can run review or simplification after
+  tracked edits
+- CodeGraph-aware guidance when a project has `.codegraph/codegraph.db` and an
+  OpenCode MCP named `codegraph`
+- generated presets for `openai`, `opencode-go`, `zen-max`, `zen-balanced`, and
+  `zen-low`
 
 To explore the agents themselves, see **[Meet the Pantheon](#meet-the-pantheon)**. For the full feature set, see **[Features & Workflows](#features-and-workflows)** below.
 
@@ -47,7 +62,8 @@ manual setups, add `omos-fitzpa` to the `plugin` array in both
 If you previously installed the upstream `oh-my-opencode-slim` package or a
 local development checkout, rerun the installer above. It replaces old plugin
 entries with `omos-fitzpa` while preserving the existing
-`~/.config/opencode/oh-my-opencode-slim.json` plugin configuration file.
+`~/.config/opencode/oh-my-opencode-slim.json` plugin configuration file unless
+you pass `--reset`.
 
 ### Getting Started
 
@@ -85,7 +101,9 @@ The default generated configuration includes `openai`, `opencode-go`, `zen-max`,
       "librarian": { "model": "openai/gpt-5.4-mini", "variant": "low", "skills": [], "mcps": ["websearch", "context7", "grep_app"] },
       "explorer": { "model": "openai/gpt-5.4-mini", "variant": "low", "skills": [], "mcps": [] },
       "designer": { "model": "openai/gpt-5.4-mini", "variant": "medium", "skills": ["agent-browser"], "mcps": [] },
-      "fixer": { "model": "openai/gpt-5.4-mini", "variant": "low", "skills": [], "mcps": [] }
+      "fixer": { "model": "openai/gpt-5.4-mini", "variant": "low", "skills": [], "mcps": [] },
+      "reviewer": { "model": "openai/gpt-5.4-mini", "variant": "low", "skills": [], "mcps": [] },
+      "simplifier": { "model": "openai/gpt-5.4-mini", "variant": "low", "skills": [], "mcps": [] }
     },
     "opencode-go": {
       "orchestrator": { "model": "opencode-go/glm-5.1", "skills": [ "*" ], "mcps": [ "*", "!context7" ] },
@@ -94,7 +112,10 @@ The default generated configuration includes `openai`, `opencode-go`, `zen-max`,
       "librarian": { "model": "opencode-go/minimax-m2.7", "skills": [], "mcps": [ "websearch", "context7", "grep_app" ] },
       "explorer": { "model": "opencode-go/minimax-m2.7", "skills": [], "mcps": [] },
       "designer": { "model": "opencode-go/kimi-k2.6", "variant": "medium", "skills": [ "agent-browser" ], "mcps": [] },
-      "fixer": { "model": "opencode-go/deepseek-v4-flash", "variant": "high", "skills": [], "mcps": [] }
+      "fixer": { "model": "opencode-go/deepseek-v4-flash", "variant": "high", "skills": [], "mcps": [] },
+      "reviewer": { "model": "opencode-go/deepseek-v4-flash", "variant": "high", "skills": [], "mcps": [] },
+      "simplifier": { "model": "opencode-go/deepseek-v4-flash", "variant": "high", "skills": [], "mcps": [] },
+      "observer": { "model": "opencode-go/kimi-k2.6", "skills": [], "mcps": [] }
     },
     "zen-balanced": {
       "orchestrator": {
@@ -116,6 +137,24 @@ The default generated configuration includes `openai`, `opencode-go`, `zen-max`,
         ],
         "skills": ["simplify"],
         "mcps": []
+      },
+      "reviewer": {
+        "model": [
+          { "id": "opencode/gpt-5.3-codex", "variant": "medium" },
+          { "id": "opencode/glm-5.1", "variant": "medium" },
+          { "id": "opencode/claude-haiku-4-5", "variant": "medium" }
+        ],
+        "skills": [],
+        "mcps": []
+      },
+      "simplifier": {
+        "model": [
+          { "id": "opencode/gpt-5.4-mini", "variant": "medium" },
+          { "id": "opencode/minimax-m2.7", "variant": "medium" },
+          { "id": "opencode/kimi-k2.6", "variant": "medium" }
+        ],
+        "skills": [],
+        "mcps": []
       }
     }
   }
@@ -127,6 +166,11 @@ prefers the strongest non-Pro models while avoiding `gpt-5.4-pro`,
 `gpt-5.5-pro`, and `claude-opus-4-7`; `zen-balanced` uses efficient paid models;
 `zen-low` keeps paid cheap models first and free models late in fallback chains
 to reduce rate-limit risk.
+
+For CodeGraph-aware discovery, configure an OpenCode MCP named `codegraph` and
+generate `.codegraph/codegraph.db` in the project. Agents only receive the
+guidance when their `mcps` list allows `codegraph`. See
+**[MCPs](docs/mcps.md#custom-codegraph-mcp)** for details.
 
 ### For Alternative Providers
 

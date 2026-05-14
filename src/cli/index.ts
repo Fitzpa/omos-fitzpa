@@ -58,7 +58,8 @@ Doctor options:
 
 Available presets: ${getGeneratedPresetNames().join(', ')}
 
-The installer generates OpenAI, OpenCode Go, and OpenCode Zen presets by default.
+The installer generates OpenAI, OpenCode Go, and OpenCode Zen presets by
+default.
 OpenAI is active unless --preset selects another generated preset.
 For the full config reference, see docs/configuration.md.
 

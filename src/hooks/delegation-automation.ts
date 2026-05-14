@@ -85,6 +85,10 @@ export function createDelegationAutomationHook(
     getSessionAgent?: (sessionID: string) => string | undefined;
   },
 ) {
+  if (options.mainSessionOnly && !options.getSessionAgent) {
+    throw new Error('mainSessionOnly requires getSessionAgent to be provided');
+  }
+
   const dirtySessions = new Set<string>();
 
   function isEnabled(): boolean {

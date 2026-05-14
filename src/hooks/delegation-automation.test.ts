@@ -95,4 +95,16 @@ describe('delegation automation', () => {
 
     expect(ctx.client.session.promptAsync).not.toHaveBeenCalled();
   });
+
+  test('requires getSessionAgent for mainSessionOnly', () => {
+    const ctx = createCtx();
+
+    expect(() =>
+      createDelegationAutomationHook(ctx, {
+        postEditReview: true,
+        postEditSimplify: false,
+        mainSessionOnly: true,
+      }),
+    ).toThrow('mainSessionOnly requires getSessionAgent to be provided');
+  });
 });

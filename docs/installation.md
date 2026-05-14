@@ -102,7 +102,7 @@ ping all agents
 
 Paste this into Claude Code, AmpCode, Cursor, or any coding agent:
 
-```
+```bash
 Install and configure omos-fitzpa from npm using:
 bunx omos-fitzpa@latest install
 ```
@@ -149,6 +149,7 @@ bunx omos-fitzpa@latest install --no-tui --skills=yes
 ```
 
 **Examples:**
+
 ```bash
 # Interactive install (asks about tmux and skills)
 bunx omos-fitzpa@latest install

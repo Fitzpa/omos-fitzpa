@@ -66,7 +66,12 @@ const AGENT_DESCRIPTIONS: Record<string, string> = {
 - Permissions: Read/write files
 - Stats: 2x faster code edits, 1/2 cost of orchestrator, 0.8x quality of orchestrator
 - Tools/Constraints: Execution-focused—no research, no architectural decisions
-- **Delegate when:** For implementation work, think and triage first. Hand bounded execution to @fixer, including small mechanical edits when setup/context is clear • Writing or updating tests • Tasks that touch test files, fixtures, mocks, or test helpers. Parallelization benefits: Task involves multiple folders and multiple files modificaiton, scoping work per folder and spawning parallel @fixers for each folder.
+- **Delegate when:** For implementation work, think and triage first. Hand bounded
+  execution to @fixer, including small mechanical edits when setup/context is
+  clear • Writing or updating tests • Tasks that touch test files, fixtures,
+  mocks, or test helpers. Parallelization benefits: Task involves multiple
+  folders and multiple files modification, scoping work per folder and spawning
+  parallel @fixers for each folder.
 - **Don't delegate when:** Needs discovery/research/decisions • Unclear requirements needing iteration • Explaining to fixer > doing • Tight integration with your current work • Sequential dependencies
 - **Rule of thumb:** Test file modifications and bounded implementation work usually go to @fixer. Batch multiple tiny implementation edits into one @fixer call when possible; pair with cleanup specialist when available.`,
 
@@ -113,7 +118,8 @@ const AGENT_DESCRIPTIONS: Record<string, string> = {
 // Validation routing lines that reference agents
 const VALIDATION_ROUTING = [
   '- Route UI/UX validation and review to @designer',
-  '- Route code review to @reviewer and behavior-preserving cleanup/simplification to @simplifier',
+  '- Route code review to @reviewer',
+  '- Route behavior-preserving cleanup/simplification to @simplifier',
   '- Route architecture-level review, hard debugging, and high-risk trade-offs to @oracle',
   '- Route test writing, test updates, and changes touching test files to @fixer',
   '- Route visual/media analysis and interpretation to @observer',
@@ -131,7 +137,7 @@ const PARALLEL_DELEGATION_EXAMPLES = [
 
 const DELEGATION_EFFICIENCY_LINES = [
   '- Delegate bounded, mechanical, test, cleanup, and review tasks to cheap specialists even when small.',
-  '- Batch multiple tiny edits into one @fixer or @simplifier call when possible.',
+  '- Batch tiny edits into one @fixer or @simplifier call.',
 ];
 
 /**

@@ -1,6 +1,7 @@
 import type { AgentDefinition } from './orchestrator';
 
-const SIMPLIFIER_PROMPT = `You are Simplifier - a behavior-preserving cleanup specialist.
+const SIMPLIFIER_PROMPT = `You are Simplifier - a behavior-preserving cleanup
+specialist.
 
 Refine recently modified code for clarity, consistency, and maintainability
 without changing behavior.
@@ -9,7 +10,8 @@ without changing behavior.
 - Simplify code introduced or modified in the current working tree
 - Keep changes minimal, local, and behavior-preserving
 - Improve readability only when the benefit is concrete
-- When CodeGraph is available, use targeted caller/callee or impact lookups to avoid changing behavior around touched symbols
+- When CodeGraph is available, use targeted caller/callee or impact lookups to
+  avoid changing behavior around touched symbols
 
 **Constraints**:
 - Do not change observable behavior, public APIs, error messages, execution

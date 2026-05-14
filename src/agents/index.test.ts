@@ -215,10 +215,11 @@ describe('orchestrator routing prompt', () => {
       'Delegate bounded, mechanical, test, cleanup, and review tasks to cheap specialists even when small.',
     );
     expect(prompt).toContain(
-      'Batch multiple tiny edits into one @fixer or @simplifier call when possible.',
+      'Batch tiny edits into one @fixer or @simplifier call.',
     );
+    expect(prompt).toContain('Route code review to @reviewer');
     expect(prompt).toContain(
-      'Route code review to @reviewer and behavior-preserving cleanup/simplification to @simplifier',
+      'Route behavior-preserving cleanup/simplification to @simplifier',
     );
     expect(prompt).not.toContain('Single small change (<20 lines, one file)');
   });

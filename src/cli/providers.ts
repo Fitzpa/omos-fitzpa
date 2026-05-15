@@ -8,6 +8,7 @@ const SCHEMA_URL =
 
 export const GENERATED_PRESETS = [
   'openai',
+  'copilot',
   'opencode-go',
   'zen-max',
   'zen-balanced',
@@ -74,25 +75,25 @@ export const MODEL_MAPPINGS = {
   'zen-max': {
     orchestrator: {
       model: [
-        { id: 'opencode/gpt-5.5', variant: 'high' },
+        { id: 'opencode/gpt-5.5', variant: 'low' },
+        { id: 'opencode/gpt-5.4', variant: 'medium' },
         { id: 'opencode/claude-opus-4-6', variant: 'high' },
         { id: 'opencode/gemini-3.1-pro', variant: 'high' },
-        { id: 'opencode/gpt-5.4', variant: 'high' },
       ],
     },
     oracle: {
       model: [
-        { id: 'opencode/claude-opus-4-6', variant: 'max' },
-        { id: 'opencode/gpt-5.5', variant: 'high' },
+        { id: 'opencode/gpt-5.5', variant: 'low' },
+        { id: 'opencode/gpt-5.4', variant: 'medium' },
+        { id: 'opencode/claude-opus-4-6', variant: 'high' },
         { id: 'opencode/gemini-3.1-pro', variant: 'high' },
-        { id: 'opencode/claude-sonnet-4-6', variant: 'high' },
       ],
     },
     council: {
       model: [
-        { id: 'opencode/gemini-3.1-pro', variant: 'high' },
-        { id: 'opencode/gpt-5.5', variant: 'high' },
-        { id: 'opencode/claude-sonnet-4-6', variant: 'high' },
+        { id: 'opencode/gpt-5.5', variant: 'low' },
+        { id: 'opencode/gpt-5.4', variant: 'medium' },
+        { id: 'opencode/claude-opus-4-6', variant: 'high' },
       ],
     },
     librarian: {
@@ -126,7 +127,7 @@ export const MODEL_MAPPINGS = {
     reviewer: {
       model: [
         { id: 'opencode/claude-sonnet-4-6', variant: 'high' },
-        { id: 'opencode/gpt-5.5', variant: 'high' },
+        { id: 'opencode/gpt-5.5', variant: 'low' },
         { id: 'opencode/gemini-3.1-pro', variant: 'high' },
       ],
     },

@@ -1,2 +1,32 @@
 [test]
 root = "./src"
+coverage = true
+coverageSkipTestFiles = true
+coverageThreshold = {
+  lines = 1,
+  functions = 1,
+  statements = 1
+}
+coveragePathIgnorePatterns = [
+  "dist/**",
+  "build/**",
+  "*.config.ts",
+  "*.config.js",
+  "src/generated/**",
+  "src/index.ts",
+  "src/cli/config-io.ts",
+  "src/cli/system.ts",
+  "src/interview/dashboard.ts",
+  "src/interview/manager.ts",
+  "src/interview/server.ts",
+  "src/interview/service.ts",
+  "src/interview/ui.ts",
+  "src/multiplexer/**",
+  "src/tools/smartfetch/**",
+  "src/tools/ast-grep/**",
+  "src/hooks/auto-update-checker/**",
+  "src/hooks/image-hook.ts",
+  "src/tui.ts",
+  "src/skills/codemap/scripts/codemap.mjs",
+  "src/utils/zip-extractor.ts",
+]

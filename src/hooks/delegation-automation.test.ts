@@ -15,6 +15,14 @@ function createCtx() {
 }
 
 describe('delegation commands', () => {
+  test('creates command map when absent', () => {
+    const opencodeConfig: Record<string, unknown> = {};
+
+    registerDelegationCommands(opencodeConfig);
+
+    expect(opencodeConfig.command).toBeDefined();
+  });
+
   test('registers review and simplify commands without overwriting user commands', () => {
     const opencodeConfig: Record<string, unknown> = {
       command: {
@@ -106,5 +114,50 @@ describe('delegation automation', () => {
         mainSessionOnly: true,
       }),
     ).toThrow('mainSessionOnly requires getSessionAgent to be provided');
+  });
+
+  test('ignores idle events without tracked writes', async () => {
+    const ctx = createCtx();
+    const hook = createDelegationAutomationHook(ctx, {
+      postEditReview: true,
+      postEditSimplify: true,
+      mainSessionOnly: false,
+    });
+
+    await hook.handleEvent({
+      event: {
+        type: 'session.idle',
+        properties: { sessionID: 's1' },
+      },
+    });
+
+    expect(ctx.client.session.promptAsync).not.toHaveBeenCalled();
+  });
+
+  test('logs and swallows prompt failures', async () => {
+    const ctx = {
+      client: {
+        session: {
+          promptAsync: mock(async () => {
+            throw new Error('prompt failed');
+          }),
+        },
+      },
+    } as any;
+    const hook = createDelegationAutomationHook(ctx, {
+      postEditReview: true,
+      postEditSimplify: true,
+      mainSessionOnly: false,
+    });
+
+    hook.handleToolExecuteAfter({ tool: 'apply_patch', sessionID: 's1' });
+    await hook.handleEvent({
+      event: {
+        type: 'session.idle',
+        properties: { sessionID: 's1' },
+      },
+    });
+
+    expect(ctx.client.session.promptAsync).toHaveBeenCalledTimes(1);
   });
 });

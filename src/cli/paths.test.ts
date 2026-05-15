@@ -6,13 +6,20 @@ import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   ensureConfigDir,
+  ensureOpenCodeConfigDir,
+  ensureTuiConfigDir,
   getConfigDir,
   getConfigJson,
   getConfigJsonc,
   getConfigSearchDirs,
   getExistingConfigPath,
+  getExistingLiteConfigPath,
+  getExistingTuiConfigPath,
   getLiteConfig,
+  getLiteConfigJsonc,
   getOpenCodeConfigPaths,
+  getTuiConfig,
+  getTuiConfigJsonc,
 } from './paths';
 
 describe('paths', () => {
@@ -101,6 +108,22 @@ describe('paths', () => {
     expect(getLiteConfig()).toBe('/custom/directory/oh-my-opencode-slim.json');
   });
 
+  test('getLiteConfigJsonc() and getTuiConfigJsonc() use config dir', () => {
+    process.env.OPENCODE_CONFIG_DIR = '/custom/directory';
+
+    expect(getLiteConfigJsonc()).toBe(
+      '/custom/directory/oh-my-opencode-slim.jsonc',
+    );
+    expect(getTuiConfigJsonc()).toBe('/custom/directory/tui.jsonc');
+  });
+
+  test('getTuiConfig() respects OPENCODE_TUI_CONFIG', () => {
+    process.env.OPENCODE_TUI_CONFIG = '/custom/tui.jsonc';
+
+    expect(getTuiConfig()).toBe('/custom/tui.jsonc');
+    expect(getExistingTuiConfigPath()).toBe('/custom/tui.jsonc');
+  });
+
   describe('getExistingConfigPath()', () => {
     let tmpDir: string;
 
@@ -153,6 +176,36 @@ describe('paths', () => {
     expect(existsSync(configDir)).toBe(false);
     ensureConfigDir();
     expect(existsSync(configDir)).toBe(true);
+
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  test('existing lite and tui config helpers prefer jsonc fallback', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'opencode-test-'));
+    process.env.OPENCODE_CONFIG_DIR = join(tmpDir, 'opencode');
+    ensureConfigDir();
+
+    const liteJsonc = getLiteConfigJsonc();
+    const tuiJsonc = getTuiConfigJsonc();
+    writeFileSync(liteJsonc, '{}');
+    writeFileSync(tuiJsonc, '{}');
+
+    expect(getExistingLiteConfigPath()).toBe(liteJsonc);
+    expect(getExistingTuiConfigPath()).toBe(tuiJsonc);
+
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  test('ensureTuiConfigDir and ensureOpenCodeConfigDir create target dirs', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'opencode-test-'));
+    process.env.OPENCODE_TUI_CONFIG = join(tmpDir, 'nested', 'tui.json');
+    process.env.XDG_CONFIG_HOME = join(tmpDir, 'xdg');
+
+    ensureTuiConfigDir();
+    ensureOpenCodeConfigDir();
+
+    expect(existsSync(join(tmpDir, 'nested'))).toBe(true);
+    expect(existsSync(join(tmpDir, 'xdg', 'opencode'))).toBe(true);
 
     rmSync(tmpDir, { recursive: true, force: true });
   });

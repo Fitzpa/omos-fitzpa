@@ -2,10 +2,15 @@ import { describe, expect, test } from 'bun:test';
 
 import {
   autoRescueComparators,
+  equalExact,
+  list,
+  matchPreparedAutoRescueComparator,
   permissiveComparators,
   prefix,
+  prepareAutoRescueTarget,
   rescueByLcs,
   rescueByPrefixSuffix,
+  score,
   seek,
   seekMatch,
   suffix,
@@ -16,6 +21,39 @@ describe('apply-patch/matching', () => {
     expect(seek(['console.log(“hola”);  '], ['console.log("hola");'], 0)).toBe(
       0,
     );
+  });
+
+  test('prepared auto rescue comparator reports each tolerant match kind', () => {
+    const target = prepareAutoRescueTarget('say "hi"');
+    expect(matchPreparedAutoRescueComparator('say "hi"', target)).toBe('exact');
+    expect(matchPreparedAutoRescueComparator('say “hi”', target)).toBe(
+      'unicode',
+    );
+    expect(matchPreparedAutoRescueComparator('say "hi"  ', target)).toBe(
+      'trim-end',
+    );
+    expect(matchPreparedAutoRescueComparator('say “hi”  ', target)).toBe(
+      'unicode-trim-end',
+    );
+    expect(
+      matchPreparedAutoRescueComparator('different', target),
+    ).toBeUndefined();
+  });
+
+  test('seek and list handle empty patterns and EOF-only matches', () => {
+    expect(seekMatch(['a'], [], 0)).toBeUndefined();
+    expect(list(['a'], [], 0, equalExact)).toEqual([]);
+    expect(seekMatch(['a', 'b'], ['b'], 0, true)).toEqual({
+      index: 1,
+      comparator: 'exact',
+      exact: true,
+    });
+    expect(seekMatch(['a', 'b'], ['a'], 1, true)).toBeUndefined();
+  });
+
+  test('list collects repeated exact matches and score handles shared lines', () => {
+    expect(list(['x', 'y', 'x'], ['x'], 0, equalExact)).toEqual([0, 2]);
+    expect(score(['a', 'b', 'c'], ['b', 'c', 'd'])).toBe(2);
   });
 
   test('seek does not rescue trim-only matches with different indentation', () => {

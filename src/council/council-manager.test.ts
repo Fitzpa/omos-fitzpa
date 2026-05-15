@@ -77,6 +77,19 @@ describe('CouncilManager', () => {
       expect(manager).toBeDefined();
     });
 
+    test('exposes deprecated and legacy council config metadata', () => {
+      const ctx = createMockContext();
+      const manager = new CouncilManager(ctx, {
+        council: {
+          _deprecated: ['master.model'],
+          _legacyMasterModel: 'legacy/model',
+        },
+      } as any);
+
+      expect(manager.getDeprecatedFields()).toEqual(['master.model']);
+      expect(manager.getLegacyMasterModel()).toBe('legacy/model');
+    });
+
     test('creates manager with plugin config', async () => {
       const ctx = createMockContext({
         sessionMessagesResult: {

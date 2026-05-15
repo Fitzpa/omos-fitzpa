@@ -4,6 +4,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import {
   readTuiSnapshot,
+  readTuiSnapshotAsync,
   recordTuiAgentModel,
   recordTuiAgentModels,
 } from './tui-state';
@@ -86,5 +87,12 @@ describe('tui-state persistence', () => {
     expect(snapshot.agentModels).toEqual({
       explorer: 'openai/gpt-5.4-mini',
     });
+  });
+
+  test('readTuiSnapshotAsync returns an empty snapshot for missing state', async () => {
+    const snapshot = await readTuiSnapshotAsync();
+
+    expect(snapshot.version).toBe(1);
+    expect(snapshot.agentModels).toEqual({});
   });
 });

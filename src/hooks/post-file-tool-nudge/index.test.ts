@@ -91,4 +91,13 @@ describe('post-file-tool-nudge hook', () => {
     expect(output.output).toBe('real content');
     expect(output.output).not.toContain(PHASE_REMINDER_TEXT);
   });
+
+  test('ignores non-string tool output', async () => {
+    const hook = createPostFileToolNudgeHook();
+    const output = { title: 'Read', output: { ok: true }, metadata: {} };
+
+    await hook['tool.execute.after']({ tool: 'read', sessionID: 's1' }, output);
+
+    expect(output.output).toEqual({ ok: true });
+  });
 });

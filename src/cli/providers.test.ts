@@ -1,7 +1,14 @@
 /// <reference types="bun-types" />
 
 import { describe, expect, test } from 'bun:test';
-import { generateLiteConfig, MODEL_MAPPINGS } from './providers';
+import {
+  generateLiteConfig,
+  getGeneratedPresetNames,
+  getPresetNames,
+  isGeneratedPresetName,
+  isPresetName,
+  MODEL_MAPPINGS,
+} from './providers';
 
 describe('providers', () => {
   test('MODEL_MAPPINGS includes supported providers', () => {
@@ -16,6 +23,16 @@ describe('providers', () => {
       'zen-low',
       'zen-max',
     ]);
+  });
+
+  test('preset name helpers recognize known presets only', () => {
+    expect(isPresetName('openai')).toBe(true);
+    expect(isPresetName('missing')).toBe(false);
+    expect(getPresetNames()).toContain('openai');
+
+    expect(isGeneratedPresetName('zen-balanced')).toBe(true);
+    expect(isGeneratedPresetName('missing')).toBe(false);
+    expect(getGeneratedPresetNames()).toContain('zen-balanced');
   });
 
   test('generateLiteConfig defaults to openai and includes generated presets', () => {

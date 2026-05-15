@@ -131,6 +131,28 @@ describe('createPresetManager', () => {
       expect(text).toContain('← active');
     });
 
+    test('lists first model from array-form preset entries', async () => {
+      const ctx = createMockContext();
+      const config: PluginConfig = {
+        presets: {
+          cheap: {
+            orchestrator: {
+              model: [{ id: 'openai/first', variant: 'low' }],
+            },
+          },
+        },
+      };
+      const manager = createPresetManager(ctx, config);
+      const output = createOutput();
+
+      await manager.handleCommandExecuteBefore(
+        { command: 'preset', sessionID: 's1', arguments: '' },
+        output,
+      );
+
+      expect(getOutputText(output)).toContain('orchestrator → openai/first');
+    });
+
     test('shows no-presets message when none configured', async () => {
       const ctx = createMockContext();
       const config: PluginConfig = {};

@@ -113,6 +113,19 @@ describe('fixer agent fallback', () => {
     expect(fixer?.config.model).toBe(librarian?.config.model);
   });
 
+  test('fixer inherits first object model from librarian model array', () => {
+    const agents = createAgents({
+      agents: {
+        librarian: {
+          model: [{ id: 'openai/librarian-primary', variant: 'low' }],
+        },
+      },
+    } as any);
+
+    const fixer = agents.find((agent) => agent.name === 'fixer');
+    expect(fixer?.config.model).toBe('openai/librarian-primary');
+  });
+
   test('fixer uses its own model when explicitly configured', () => {
     const config: PluginConfig = {
       agents: {

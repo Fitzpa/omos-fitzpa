@@ -10,6 +10,7 @@ import {
 } from './errors';
 import {
   applyPreparedChanges,
+  parseValidatedPatch,
   preparePatchChanges,
   rewritePatch,
   rewritePatchText,
@@ -729,6 +730,36 @@ garbage
     );
   });
 
+  test('applyPreparedChanges validates prepared change contract details', async () => {
+    const absolute = path.join(await createTempDir(), 'file.txt');
+    const cases = [
+      [null, 'Prepared change at index 0 must be an object'],
+      [{ file: absolute }, 'Prepared change at index 0 is missing type'],
+      [
+        { type: 'add', file: absolute },
+        'Prepared add at index 0 is missing text',
+      ],
+      [
+        { type: 'update', file: absolute },
+        'Prepared update at index 0 is missing text',
+      ],
+      [
+        { type: 'update', file: absolute, text: '', move: 'relative.txt' },
+        'Prepared changes require absolute normalized move paths at index 0: relative.txt',
+      ],
+      [
+        { type: 'unknown', file: absolute },
+        'Prepared change at index 0 has unsupported type',
+      ],
+    ] as const;
+
+    for (const [change, message] of cases) {
+      await expect(applyPreparedChanges([change] as any)).rejects.toThrow(
+        `apply_patch validation failed: ${message}`,
+      );
+    }
+  });
+
   test('rewritePatchText and preparePatchChanges share the validation/verification taxonomy', async () => {
     const root = await createTempDir();
     await writeFixture(root, 'sample.txt', 'alpha\nbeta\n');
@@ -756,6 +787,19 @@ garbage
 
     expect(isApplyPatchVerificationError(verificationError)).toBeTrue();
     expect(isApplyPatchValidationError(validationError)).toBeTrue();
+  });
+
+  test('parseValidatedPatch rejects empty and hunkless patches', () => {
+    expect(() =>
+      parseValidatedPatch(`*** Begin Patch
+*** End Patch`),
+    ).toThrow('apply_patch validation failed: empty patch');
+
+    expect(() =>
+      parseValidatedPatch(`*** Begin Patch
+ignored
+*** End Patch`),
+    ).toThrow('apply_patch validation failed: Invalid patch format');
   });
 
   test('rewritePatchText canonicalizes EOF insertion with a tolerant anchor', async () => {

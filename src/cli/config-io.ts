@@ -37,6 +37,25 @@ function isString(value: unknown): value is string {
   return typeof value === 'string';
 }
 
+function extractModelIds(model: unknown): string[] {
+  if (isString(model)) {
+    return [model];
+  }
+
+  if (Array.isArray(model)) {
+    return model.flatMap((entry) => extractModelIds(entry));
+  }
+
+  if (model && typeof model === 'object') {
+    const modelObject = model as { id?: unknown };
+    if (isString(modelObject.id)) {
+      return [modelObject.id];
+    }
+  }
+
+  return [];
+}
+
 function getPlugins(config: OpenCodeConfig): unknown[] {
   return Array.isArray(config.plugin) ? config.plugin : [];
 }
@@ -589,23 +608,36 @@ export function detectCurrentConfig(): DetectedConfig {
     const configObj = liteConfig as Record<string, unknown>;
     const presetName = configObj.preset as string;
     const presets = configObj.presets as Record<string, unknown>;
-    const agents = presets?.[presetName] as
-      | Record<string, { model?: string }>
-      | undefined;
+    const agents = presets?.[presetName] as Record<string, unknown> | undefined;
 
     if (agents) {
-      const models = Object.values(agents)
-        .map((a) => a?.model)
-        .filter(Boolean);
-      result.hasOpenAI = models.some((m) => m?.startsWith('openai/'));
-      result.hasAnthropic = models.some((m) => m?.startsWith('anthropic/'));
-      result.hasCopilot = models.some((m) => m?.startsWith('github-copilot/'));
-      result.hasZaiPlan = models.some((m) => m?.startsWith('zai-coding-plan/'));
-      result.hasOpencodeZen = models.some((m) => m?.startsWith('opencode/'));
-      if (models.some((m) => m?.startsWith('google/'))) {
+      const modelIds = Object.values(agents).flatMap((agentConfig) => {
+        if (!agentConfig || typeof agentConfig !== 'object') {
+          return [];
+        }
+        const model = (agentConfig as { model?: unknown }).model;
+        return extractModelIds(model);
+      });
+
+      result.hasOpenAI = modelIds.some((modelId) =>
+        modelId.startsWith('openai/'),
+      );
+      result.hasAnthropic = modelIds.some((modelId) =>
+        modelId.startsWith('anthropic/'),
+      );
+      result.hasCopilot = modelIds.some((modelId) =>
+        modelId.startsWith('github-copilot/'),
+      );
+      result.hasZaiPlan = modelIds.some((modelId) =>
+        modelId.startsWith('zai-coding-plan/'),
+      );
+      result.hasOpencodeZen = modelIds.some((modelId) =>
+        modelId.startsWith('opencode/'),
+      );
+      if (modelIds.some((modelId) => modelId.startsWith('google/'))) {
         result.hasAntigravity = true;
       }
-      if (models.some((m) => m?.startsWith('chutes/'))) {
+      if (modelIds.some((modelId) => modelId.startsWith('chutes/'))) {
         result.hasChutes = true;
       }
     }

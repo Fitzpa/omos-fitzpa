@@ -542,4 +542,53 @@ describe('config-io', () => {
 
     expect(detected.isInstalled).toBe(true);
   });
+
+  test('detectCurrentConfig handles object and array model definitions', () => {
+    const configPath = join(tmpDir, 'opencode', 'opencode.json');
+    const litePath = join(tmpDir, 'opencode', 'oh-my-opencode-slim.json');
+    paths.ensureConfigDir();
+
+    writeFileSync(configPath, JSON.stringify({ plugin: ['omos-fitzpa'] }));
+    writeFileSync(
+      litePath,
+      JSON.stringify({
+        preset: 'zen-balanced',
+        presets: {
+          'zen-balanced': {
+            orchestrator: {
+              model: [{ id: 'opencode/glm-5.1', variant: 'medium' }],
+            },
+            oracle: {
+              model: [
+                { id: 'anthropic/claude-opus-4-6', variant: 'high' },
+                'openai/gpt-5.5',
+              ],
+            },
+            explorer: {
+              model: ['github-copilot/grok-code-fast-1'],
+            },
+            librarian: {
+              model: [{ id: 'zai-coding-plan/glm-5' }],
+            },
+            designer: {
+              model: [{ id: 'google/gemini-3.1-pro-preview' }],
+            },
+            fixer: {
+              model: ['chutes/deepseek-r1'],
+            },
+          },
+        },
+      }),
+    );
+
+    const detected = detectCurrentConfig();
+
+    expect(detected.hasOpenAI).toBe(true);
+    expect(detected.hasAnthropic).toBe(true);
+    expect(detected.hasCopilot).toBe(true);
+    expect(detected.hasZaiPlan).toBe(true);
+    expect(detected.hasOpencodeZen).toBe(true);
+    expect(detected.hasAntigravity).toBe(true);
+    expect(detected.hasChutes).toBe(true);
+  });
 });

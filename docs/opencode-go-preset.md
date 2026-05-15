@@ -14,7 +14,7 @@ agent and configures it with `opencode-go/kimi-k2.6` for visual analysis.
 ## Install with OpenCode Go Active
 
 ```bash
-bunx oh-my-opencode-slim@latest install --preset=opencode-go
+bunx omos-fitzpa@latest install --preset=opencode-go
 ```
 
 Then authenticate and refresh models:

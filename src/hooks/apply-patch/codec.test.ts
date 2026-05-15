@@ -129,6 +129,38 @@ garbage
     ).toThrow('unexpected line in Add File body');
   });
 
+  test('parsePatch skips garbage in permissive update and add bodies', () => {
+    expect(
+      parsePatch(`*** Begin Patch
+*** Add File: sample.txt
+ignored
++alpha
+*** Update File: other.txt
+ignored
+@@
+-old
+ignored
++new
+*** End Patch`),
+    ).toEqual({
+      hunks: [
+        { type: 'add', path: 'sample.txt', contents: 'alpha' },
+        {
+          type: 'update',
+          path: 'other.txt',
+          chunks: [
+            {
+              old_lines: ['old'],
+              new_lines: ['new'],
+              change_context: undefined,
+              is_end_of_file: undefined,
+            },
+          ],
+        },
+      ],
+    });
+  });
+
   test('parsePatchStrict fails on malformed Delete File', () => {
     expect(() =>
       parsePatchStrict(`*** Begin Patch
@@ -145,6 +177,40 @@ garbage
 *** End Patch
 garbage`),
     ).toThrow('unexpected line after End Patch');
+  });
+
+  test('parsePatchStrict fails on garbage before Begin Patch', () => {
+    expect(() =>
+      parsePatchStrict(`garbage
+*** Begin Patch
+*** Delete File: sample.txt
+*** End Patch`),
+    ).toThrow('unexpected line before Begin Patch');
+  });
+
+  test('parsePatch fails when markers are missing', () => {
+    expect(() => parsePatch('*** Begin Patch')).toThrow(
+      'Invalid patch format: missing Begin/End markers',
+    );
+  });
+
+  test('parsePatchStrict fails on empty move target and malformed headers', () => {
+    expect(() =>
+      parsePatchStrict(`*** Begin Patch
+*** Update File: sample.txt
+*** Move to:
+@@
+-alpha
++beta
+*** End Patch`),
+    ).toThrow('unexpected line between hunks');
+
+    expect(() =>
+      parsePatchStrict(`*** Begin Patch
+*** Add File:
++alpha
+*** End Patch`),
+    ).toThrow('unexpected line between hunks');
   });
 
   test('parsePatchStrict fails when Update File has no @@ chunks', () => {
@@ -171,6 +237,31 @@ garbage`),
       ],
     };
 
+    expect(parsePatch(formatPatch(parsed))).toEqual(parsed);
+  });
+
+  test('formatPatch renders empty adds, deletes, moves, and EOF chunks', () => {
+    const parsed: ParsedPatch = {
+      hunks: [
+        { type: 'add', path: 'empty.txt', contents: '' },
+        { type: 'delete', path: 'old.txt' },
+        {
+          type: 'update',
+          path: 'old-name.txt',
+          move_path: 'new-name.txt',
+          chunks: [
+            {
+              old_lines: ['alpha'],
+              new_lines: ['beta', 'gamma'],
+              change_context: undefined,
+              is_end_of_file: true,
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(formatPatch(parsed)).toContain('*** Move to: new-name.txt');
     expect(parsePatch(formatPatch(parsed))).toEqual(parsed);
   });
 

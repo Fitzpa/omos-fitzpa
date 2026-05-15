@@ -71,4 +71,23 @@ describe('createPhaseReminderHook', () => {
 
     expect(output.messages[0].parts[0].text).toBe(text);
   });
+
+  test('skips empty message lists, assistant-only turns, and textless users', async () => {
+    const hook = createPhaseReminderHook();
+    const empty = { messages: [] };
+    await hook['experimental.chat.messages.transform']({}, empty);
+    expect(empty.messages).toEqual([]);
+
+    const assistantOnly = {
+      messages: [{ info: { role: 'assistant' }, parts: [{ type: 'text' }] }],
+    };
+    await hook['experimental.chat.messages.transform']({}, assistantOnly);
+    expect(assistantOnly.messages[0].parts[0].text).toBeUndefined();
+
+    const textlessUser = {
+      messages: [{ info: { role: 'user' }, parts: [{ type: 'image' }] }],
+    };
+    await hook['experimental.chat.messages.transform']({}, textlessUser);
+    expect(textlessUser.messages[0].parts).toEqual([{ type: 'image' }]);
+  });
 });

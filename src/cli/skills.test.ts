@@ -1,5 +1,12 @@
-import { describe, expect, it } from 'bun:test';
-import { getSkillPermissionsForAgent } from './skills';
+import { afterEach, describe, expect, it, spyOn } from 'bun:test';
+import * as childProcess from 'node:child_process';
+import { getSkillPermissionsForAgent, installSkill } from './skills';
+
+const spawnSpy = spyOn(childProcess, 'spawnSync');
+
+afterEach(() => {
+  spawnSpy.mockReset();
+});
 
 describe('skills permissions', () => {
   it('should allow all skills for orchestrator by default', () => {
@@ -44,5 +51,94 @@ describe('skills permissions', () => {
   it('should honor wildcard in explicit list', () => {
     const wildcardPerms = getSkillPermissionsForAgent('designer', ['*']);
     expect(wildcardPerms['*']).toBe('allow');
+  });
+
+  it('installSkill runs npx and post-install commands', () => {
+    spawnSpy.mockReturnValue({
+      status: 0,
+    } as childProcess.SpawnSyncReturns<Buffer>);
+
+    expect(
+      installSkill({
+        name: 'test skill',
+        repo: 'https://example.com/repo',
+        skillName: 'test-skill',
+        allowedAgents: ['designer'],
+        description: 'test',
+        postInstallCommands: ['echo done'],
+      }),
+    ).toBe(true);
+
+    expect(spawnSpy).toHaveBeenCalledWith(
+      'npx',
+      [
+        'skills',
+        'add',
+        'https://example.com/repo',
+        '--skill',
+        'test-skill',
+        '-a',
+        'opencode',
+        '-y',
+        '--global',
+      ],
+      { stdio: 'inherit' },
+    );
+    expect(spawnSpy).toHaveBeenCalledWith('echo', ['done'], {
+      stdio: 'inherit',
+    });
+  });
+
+  it('installSkill returns false when npx exits unsuccessfully', () => {
+    spawnSpy.mockReturnValue({
+      status: 1,
+    } as childProcess.SpawnSyncReturns<Buffer>);
+
+    expect(
+      installSkill({
+        name: 'test skill',
+        repo: 'https://example.com/repo',
+        skillName: 'test-skill',
+        allowedAgents: ['designer'],
+        description: 'test',
+      }),
+    ).toBe(false);
+  });
+
+  it('installSkill continues after failed post-install commands', () => {
+    spawnSpy
+      .mockReturnValueOnce({
+        status: 0,
+      } as childProcess.SpawnSyncReturns<Buffer>)
+      .mockReturnValueOnce({
+        status: 1,
+      } as childProcess.SpawnSyncReturns<Buffer>);
+
+    expect(
+      installSkill({
+        name: 'test skill',
+        repo: 'https://example.com/repo',
+        skillName: 'test-skill',
+        allowedAgents: ['designer'],
+        description: 'test',
+        postInstallCommands: ['echo done'],
+      }),
+    ).toBe(true);
+  });
+
+  it('installSkill returns false when spawn throws', () => {
+    spawnSpy.mockImplementation(() => {
+      throw new Error('spawn failed');
+    });
+
+    expect(
+      installSkill({
+        name: 'test skill',
+        repo: 'https://example.com/repo',
+        skillName: 'test-skill',
+        allowedAgents: ['designer'],
+        description: 'test',
+      }),
+    ).toBe(false);
   });
 });

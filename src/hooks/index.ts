@@ -3,6 +3,10 @@ export type { AutoUpdateCheckerOptions } from './auto-update-checker';
 export { createAutoUpdateCheckerHook } from './auto-update-checker';
 export { createChatHeadersHook } from './chat-headers';
 export { createDelegateTaskRetryHook } from './delegate-task-retry';
+export {
+  createDelegationAutomationHook,
+  registerDelegationCommands,
+} from './delegation-automation';
 export { createFilterAvailableSkillsHook } from './filter-available-skills';
 export {
   ForegroundFallbackManager,

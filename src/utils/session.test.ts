@@ -40,6 +40,64 @@ describe('session utilities', () => {
     expect(abort).toHaveBeenCalledWith({ path: { id: 's1' } });
   });
 
+  test('promptWithTimeout sends directly when timeout is disabled', async () => {
+    const prompt = mock(async () => undefined);
+    const client = {
+      session: {
+        prompt,
+      },
+    } as any;
+
+    await promptWithTimeout(
+      client,
+      { path: { id: 's1' }, body: { parts: [] } },
+      0,
+    );
+
+    expect(prompt).toHaveBeenCalledWith({
+      path: { id: 's1' },
+      body: { parts: [] },
+    });
+  });
+
+  test('promptWithTimeout rejects immediately when signal is already aborted', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const client = {
+      session: {
+        prompt: mock(async () => undefined),
+      },
+    } as any;
+
+    await expect(
+      promptWithTimeout(
+        client,
+        { path: { id: 's1' }, body: { parts: [] } },
+        50,
+        controller.signal,
+      ),
+    ).rejects.toThrow('Prompt cancelled');
+  });
+
+  test('promptWithTimeout rejects when signal aborts while prompting', async () => {
+    const controller = new AbortController();
+    const client = {
+      session: {
+        prompt: mock(() => never()),
+      },
+    } as any;
+
+    const pending = promptWithTimeout(
+      client,
+      { path: { id: 's1' }, body: { parts: [] } },
+      50,
+      controller.signal,
+    );
+    controller.abort();
+
+    await expect(pending).rejects.toThrow('Prompt cancelled');
+  });
+
   test('promptWithTimeout preserves timeout error when abort fails', async () => {
     const abort = mock(async () => {
       throw new Error('abort failed');

@@ -158,6 +158,23 @@ describe('logger', () => {
     expect(files.find((f) => f.includes('current'))).toBeDefined();
   });
 
+  test('cleanup applies retention to background task json files only', () => {
+    const bgTaskDir = path.join(tmpDir, 'bg-tasks');
+    fs.mkdirSync(bgTaskDir);
+    const oldJson = path.join(bgTaskDir, 'old.json');
+    const oldText = path.join(bgTaskDir, 'old.txt');
+    fs.writeFileSync(oldJson, '{}');
+    fs.writeFileSync(oldText, 'text');
+    const eightDaysAgo = Date.now() - 8 * 24 * 60 * 60 * 1000;
+    fs.utimesSync(oldJson, new Date(eightDaysAgo), new Date(eightDaysAgo));
+    fs.utimesSync(oldText, new Date(eightDaysAgo), new Date(eightDaysAgo));
+
+    initLogger('current');
+
+    expect(fs.existsSync(oldJson)).toBe(false);
+    expect(fs.existsSync(oldText)).toBe(true);
+  });
+
   test('cleanup with no existing files does not crash', () => {
     expect(() => initLogger('fresh')).not.toThrow();
     log('init');

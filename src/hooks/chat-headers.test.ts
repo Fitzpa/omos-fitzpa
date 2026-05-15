@@ -233,4 +233,23 @@ describe('createChatHeadersHook', () => {
 
     expect(ctx.client.session.message).toHaveBeenCalledTimes(2);
   });
+
+  test('clears marker cache at capacity', async () => {
+    const ctx = createMockContext([
+      createInternalAgentTextPart('internal notification'),
+    ]);
+    const hook = createChatHeadersHook(ctx);
+
+    for (let index = 0; index < 1001; index += 1) {
+      await hook['chat.headers'](
+        createInput({ messageID: `message-${index}` }),
+        { headers: {} },
+      );
+    }
+    await hook['chat.headers'](createInput({ messageID: 'message-0' }), {
+      headers: {},
+    });
+
+    expect(ctx.client.session.message).toHaveBeenCalledTimes(1002);
+  });
 });

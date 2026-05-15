@@ -19,6 +19,21 @@ interface AutoUpdateInstallContext {
   packageJsonPath: string;
 }
 
+function getPackagePathParts(packageName: string): string[] {
+  return packageName.split('/').filter(Boolean);
+}
+
+function getInstalledPackageDir(
+  installDir: string,
+  packageName: string,
+): string {
+  return path.join(
+    installDir,
+    'node_modules',
+    ...getPackagePathParts(packageName),
+  );
+}
+
 /**
  * Removes a package from the bun.lock file if it's in JSON format.
  * Note: Newer Bun versions (1.1+) use a custom text format for bun.lock.
@@ -103,7 +118,7 @@ function removeInstalledPackage(
   installDir: string,
   packageName: string,
 ): boolean {
-  const pkgDir = path.join(installDir, 'node_modules', packageName);
+  const pkgDir = getInstalledPackageDir(installDir, packageName);
   if (!fs.existsSync(pkgDir)) return false;
 
   fs.rmSync(pkgDir, { recursive: true, force: true });
@@ -116,10 +131,14 @@ export function resolveInstallContext(
 ): AutoUpdateInstallContext | null {
   if (runtimePackageJsonPath) {
     const packageDir = path.dirname(runtimePackageJsonPath);
-    const nodeModulesDir = path.dirname(packageDir);
+    const packageParts = getPackagePathParts(PACKAGE_NAME);
+    const nodeModulesDir = packageParts.reduce(
+      (dir) => path.dirname(dir),
+      packageDir,
+    );
 
     if (
-      path.basename(packageDir) === PACKAGE_NAME &&
+      packageDir === path.join(nodeModulesDir, ...packageParts) &&
       path.basename(nodeModulesDir) === 'node_modules'
     ) {
       const installDir = path.dirname(nodeModulesDir);

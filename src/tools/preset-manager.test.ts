@@ -33,6 +33,19 @@ function getOutputText(output: ReturnType<typeof createOutput>): string {
     .join('\n');
 }
 
+function expectConfigAgentUpdate(
+  ctx: ReturnType<typeof createMockContext>,
+  expectedAgents: Record<string, Record<string, unknown>>,
+) {
+  const call = ctx.client.config.update.mock.calls[0]?.[0] as {
+    body: { agent: Record<string, Record<string, unknown>> };
+  };
+  for (const [name, expected] of Object.entries(expectedAgents)) {
+    expect(call.body.agent[name]).toEqual(expect.objectContaining(expected));
+  }
+  return call;
+}
+
 let previousXdgDataHome: string | undefined;
 let tempDir: string;
 
@@ -118,6 +131,28 @@ describe('createPresetManager', () => {
       expect(text).toContain('← active');
     });
 
+    test('lists first model from array-form preset entries', async () => {
+      const ctx = createMockContext();
+      const config: PluginConfig = {
+        presets: {
+          cheap: {
+            orchestrator: {
+              model: [{ id: 'openai/first', variant: 'low' }],
+            },
+          },
+        },
+      };
+      const manager = createPresetManager(ctx, config);
+      const output = createOutput();
+
+      await manager.handleCommandExecuteBefore(
+        { command: 'preset', sessionID: 's1', arguments: '' },
+        output,
+      );
+
+      expect(getOutputText(output)).toContain('orchestrator → openai/first');
+    });
+
     test('shows no-presets message when none configured', async () => {
       const ctx = createMockContext();
       const config: PluginConfig = {};
@@ -157,14 +192,38 @@ describe('createPresetManager', () => {
       expect(text).toContain('anthropic/claude-3.5-haiku');
       expect(text).toContain('explorer');
       expect(ctx.client.config.update).toHaveBeenCalledTimes(1);
-      expect(ctx.client.config.update).toHaveBeenCalledWith({
-        body: {
-          agent: {
+      expectConfigAgentUpdate(ctx, {
+        orchestrator: { model: 'anthropic/claude-3.5-haiku' },
+        explorer: { model: 'openai/gpt-5.4-mini' },
+      });
+    });
+
+    test('sends a complete agent table so orchestrator remains registered', async () => {
+      const ctx = createMockContext();
+      const config: PluginConfig = {
+        presets: {
+          cheap: {
             orchestrator: { model: 'anthropic/claude-3.5-haiku' },
-            explorer: { model: 'openai/gpt-5.4-mini' },
           },
         },
-      });
+      };
+      const manager = createPresetManager(ctx, config);
+      const output = createOutput();
+
+      await manager.handleCommandExecuteBefore(
+        { command: 'preset', sessionID: 's1', arguments: 'cheap' },
+        output,
+      );
+
+      const call = ctx.client.config.update.mock.calls[0]?.[0] as {
+        body: { agent: Record<string, Record<string, unknown>> };
+      };
+      expect(call.body.agent.orchestrator?.mode).toBe('primary');
+      expect(call.body.agent.orchestrator?.model).toBe(
+        'anthropic/claude-3.5-haiku',
+      );
+      expect(call.body.agent.explorer?.mode).toBe('subagent');
+      expect(call.body.agent.oracle?.mode).toBe('subagent');
     });
 
     test('updates the TUI snapshot after a successful preset switch', async () => {
@@ -216,12 +275,8 @@ describe('createPresetManager', () => {
         output,
       );
 
-      expect(ctx.client.config.update).toHaveBeenCalledWith({
-        body: {
-          agent: {
-            orchestrator: { model: 'openai/o3', temperature: 0.1 },
-          },
-        },
+      expectConfigAgentUpdate(ctx, {
+        orchestrator: { model: 'openai/o3', temperature: 0.1 },
       });
     });
 
@@ -245,14 +300,10 @@ describe('createPresetManager', () => {
         output,
       );
 
-      expect(ctx.client.config.update).toHaveBeenCalledWith({
-        body: {
-          agent: {
-            oracle: {
-              model: 'anthropic/claude-sonnet-4-6',
-              variant: 'thinking',
-            },
-          },
+      expectConfigAgentUpdate(ctx, {
+        oracle: {
+          model: 'anthropic/claude-sonnet-4-6',
+          variant: 'thinking',
         },
       });
     });
@@ -370,15 +421,11 @@ describe('createPresetManager', () => {
         output,
       );
 
-      expect(ctx.client.config.update).toHaveBeenCalledWith({
-        body: {
-          agent: {
-            oracle: {
-              model: 'anthropic/claude-sonnet-4-6',
-              options: {
-                thinking: { type: 'enabled', budgetTokens: 10000 },
-              },
-            },
+      expectConfigAgentUpdate(ctx, {
+        oracle: {
+          model: 'anthropic/claude-sonnet-4-6',
+          options: {
+            thinking: { type: 'enabled', budgetTokens: 10000 },
           },
         },
       });
@@ -466,14 +513,9 @@ describe('createPresetManager', () => {
 
       const text = getOutputText(output);
       expect(text).toContain('Switched to preset "mixed"');
-      // Only orchestrator and oracle should be forwarded
-      expect(ctx.client.config.update).toHaveBeenCalledWith({
-        body: {
-          agent: {
-            orchestrator: { model: 'anthropic/claude-3.5-haiku' },
-            oracle: { temperature: 0.3 },
-          },
-        },
+      expectConfigAgentUpdate(ctx, {
+        orchestrator: { model: 'anthropic/claude-3.5-haiku' },
+        oracle: { temperature: 0.3 },
       });
     });
 
@@ -498,12 +540,8 @@ describe('createPresetManager', () => {
 
       const text = getOutputText(output);
       expect(text).toContain('Switched to preset "fallback"');
-      expect(ctx.client.config.update).toHaveBeenCalledWith({
-        body: {
-          agent: {
-            orchestrator: { model: 'anthropic/claude-3.5-haiku' },
-          },
-        },
+      expectConfigAgentUpdate(ctx, {
+        orchestrator: { model: 'anthropic/claude-3.5-haiku' },
       });
     });
 
@@ -529,14 +567,10 @@ describe('createPresetManager', () => {
         output,
       );
 
-      expect(ctx.client.config.update).toHaveBeenCalledWith({
-        body: {
-          agent: {
-            oracle: {
-              model: 'anthropic/claude-sonnet-4-6',
-              variant: 'thinking',
-            },
-          },
+      expectConfigAgentUpdate(ctx, {
+        oracle: {
+          model: 'anthropic/claude-sonnet-4-6',
+          variant: 'thinking',
         },
       });
     });
@@ -671,12 +705,8 @@ describe('createPresetManager', () => {
         { command: 'preset', sessionID: 's1', arguments: 'cheap' },
         output1,
       );
-      expect(ctx.client.config.update).toHaveBeenCalledWith({
-        body: {
-          agent: {
-            oracle: { model: 'cheap-model', temperature: 0.3 },
-          },
-        },
+      expectConfigAgentUpdate(ctx, {
+        oracle: { model: 'cheap-model', temperature: 0.3 },
       });
 
       // Reset mock for next call
@@ -689,13 +719,9 @@ describe('createPresetManager', () => {
       );
 
       // Second update should reset oracle to baseline and set orchestrator
-      expect(ctx.client.config.update).toHaveBeenCalledWith({
-        body: {
-          agent: {
-            oracle: { model: 'baseline-model' },
-            orchestrator: { model: 'powerful-model' },
-          },
-        },
+      expectConfigAgentUpdate(ctx, {
+        oracle: { model: 'baseline-model' },
+        orchestrator: { model: 'powerful-model' },
       });
 
       // Cleanup
@@ -722,12 +748,8 @@ describe('createPresetManager', () => {
         { command: 'preset', sessionID: 's1', arguments: 'cheap' },
         output1,
       );
-      expect(ctx.client.config.update).toHaveBeenCalledWith({
-        body: {
-          agent: {
-            oracle: { model: 'a' },
-          },
-        },
+      expectConfigAgentUpdate(ctx, {
+        oracle: { model: 'a' },
       });
 
       // Reset mock for next call
@@ -740,12 +762,8 @@ describe('createPresetManager', () => {
       );
 
       // Second update should only have oracle, no reset updates
-      expect(ctx.client.config.update).toHaveBeenCalledWith({
-        body: {
-          agent: {
-            oracle: { model: 'b' },
-          },
-        },
+      expectConfigAgentUpdate(ctx, {
+        oracle: { model: 'b' },
       });
 
       // Cleanup

@@ -27,6 +27,8 @@ import {
   createOrchestratorAgent,
   resolvePrompt,
 } from './orchestrator';
+import { createReviewerAgent } from './reviewer';
+import { createSimplifierAgent } from './simplifier';
 
 export type { AgentDefinition } from './orchestrator';
 
@@ -208,6 +210,8 @@ const SUBAGENT_FACTORIES: Record<SubagentName, AgentFactory> = {
   oracle: createOracleAgent,
   designer: createDesignerAgent,
   fixer: createFixerAgent,
+  reviewer: createReviewerAgent,
+  simplifier: createSimplifierAgent,
   observer: createObserverAgent,
   council: createCouncilAgent,
   councillor: createCouncillorAgent,

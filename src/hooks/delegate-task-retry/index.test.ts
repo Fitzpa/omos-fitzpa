@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test';
+import { buildRetryGuidance } from './guidance';
 import { createDelegateTaskRetryHook } from './hook';
+import { detectDelegateTaskError } from './patterns';
 
 describe('delegate-task-retry hook', () => {
   test('appends guidance for task argument errors', async () => {
@@ -34,5 +36,20 @@ describe('delegate-task-retry hook', () => {
     await hook['tool.execute.after']({ tool: 'read' }, output);
 
     expect(output.output).toBe('all good');
+  });
+
+  test('buildRetryGuidance falls back for unknown error types', () => {
+    expect(
+      buildRetryGuidance({
+        errorType: 'unknown' as never,
+        originalOutput: 'bad',
+      }),
+    ).toContain('Fix parameters and retry');
+  });
+
+  test('detectDelegateTaskError returns null when no known pattern matches', () => {
+    expect(
+      detectDelegateTaskError('Invalid arguments: unfamiliar validation'),
+    ).toBeNull();
   });
 });

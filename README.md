@@ -1,6 +1,6 @@
 <div align="center">
   <img src="img/team.jpeg" alt="Pantheon agents" style="border-radius: 10px;">
-  <p><i>Seven divine beings emerged from the dawn of code, each an immortal master of their craft await your command to forge order from chaos and build what was once thought impossible.</i></p>
+  <p><i>A specialist team emerged from the dawn of code, each an immortal master of their craft awaiting your command to forge order from chaos and build what was once thought impossible.</i></p>
   <p><b>Open Multi Agent Suite</b> · Mix any models · Auto delegate tasks</p>
 
   <p><sub>by <b>Boring Dystopia Development</b></sub></p>
@@ -15,9 +15,24 @@
 
 ## What's This Plugin
 
-oh-my-opencode-slim is an agent orchestration plugin for OpenCode. It includes a built-in team of specialized agents that can scout a codebase, look up fresh documentation, review architecture, handle UI work, and execute well-scoped implementation tasks under one orchestrator.
+`omos-fitzpa` is the published npm package and CLI for this maintained fork of
+`oh-my-opencode-slim`, an agent orchestration plugin for OpenCode. It includes a
+built-in team of specialized agents that can scout a codebase, look up fresh
+documentation, review architecture, handle UI work, and execute well-scoped
+implementation tasks under one orchestrator.
 
 The main idea is simple: instead of forcing one model to do everything, the plugin routes each part of the job to the agent best suited for it, balancing **quality, speed and cost**.
+
+Current capabilities include:
+
+- `@reviewer` for read-only changed-code review and `/review-changes`
+- `@simplifier` for behavior-preserving cleanup and `/simplify-changes`
+- optional post-edit automation that can run review or simplification after
+  tracked edits
+- CodeGraph-aware guidance when a project has `.codegraph/codegraph.db` and an
+  OpenCode MCP named `codegraph`
+- generated presets for `openai`, `opencode-go`, `zen-max`, `zen-balanced`, and
+  `zen-low`
 
 To explore the agents themselves, see **[Meet the Pantheon](#meet-the-pantheon)**. For the full feature set, see **[Features & Workflows](#features-and-workflows)** below.
 
@@ -27,26 +42,32 @@ Copy and paste this prompt to your LLM agent (Claude Code, AmpCode, Cursor, etc.
 
 
 ```
-Install and configure oh-my-opencode-slim: https://raw.githubusercontent.com/alvinunreal/oh-my-opencode-slim/refs/heads/master/README.md
+Install and configure omos-fitzpa from npm using: bunx omos-fitzpa@latest install
 ```
 
 
 ### Manual Installation
 
 ```bash
-bunx oh-my-opencode-slim@latest install
+bunx omos-fitzpa@latest install
 ```
 
 The installer also registers the companion TUI plugin in OpenCode's
 `tui.json`, which adds a small sidebar showing specialist-agent status plus
 active/reusable task sessions. It also warms OpenCode's plugin cache so bunx
 installs keep loading even after temporary directories are cleaned up. For
-manual setups, add `oh-my-opencode-slim` to the `plugin` array in both
+manual setups, add `omos-fitzpa` to the `plugin` array in both
 `opencode.json` and `tui.json`.
+
+If you previously installed the upstream `oh-my-opencode-slim` package or a
+local development checkout, rerun the installer above. It replaces old plugin
+entries with `omos-fitzpa` while preserving the existing
+`~/.config/opencode/oh-my-opencode-slim.json` plugin configuration file unless
+you pass `--reset`.
 
 ### Getting Started
 
-The installer generates both OpenAI and OpenCode Go presets, with OpenAI active by default. OpenAI uses `openai/gpt-5.5` for the higher-judgment agents and `openai/gpt-5.4-mini` for the faster scoped agents. To make OpenCode Go active during install, run `bunx oh-my-opencode-slim@latest install --preset=opencode-go` or change the default preset name in `~/.config/opencode/oh-my-opencode-slim.json` after installation.
+The installer generates OpenAI, OpenCode Go, and OpenCode Zen presets, with OpenAI active by default. OpenAI uses `openai/gpt-5.5` for the higher-judgment agents and `openai/gpt-5.4-mini` for the faster-scoped agents. To make another generated preset active during install, run `bunx omos-fitzpa@latest install --preset=opencode-go`, `--preset=zen-max`, `--preset=zen-balanced`, or `--preset=zen-low`, or change the default preset name in `~/.config/opencode/oh-my-opencode-slim.json` after installation.
 
 Then:
 
@@ -65,13 +86,13 @@ Then:
 4. **Update the models you want for each agent**
 
 > [!TIP]
-> It's **recommended** to understand how automatic delegation works. The **[Orchestrator prompt](https://github.com/alvinunreal/oh-my-opencode-slim/blob/master/src/agents/orchestrator.ts#L28)** contains the delegation rules, specialist routing logic, and the thresholds for when the main agent should hand work off to subagents. You can alway delegate manually by calling a subagent via: `@agentName <task>`
+> It's **recommended** to understand how automatic delegation works. The **[Orchestrator prompt](src/agents/orchestrator.ts)** contains the delegation rules, specialist routing logic, and the thresholds for when the main agent should hand work off to subagents. You can always delegate manually by calling a subagent via: `@agentName <task>`
 
-The default generated configuration includes both `openai` and `opencode-go` presets.
+The default generated configuration includes `openai`, `opencode-go`, `zen-max`, `zen-balanced`, and `zen-low` presets.
 
 ```jsonc
 {
-  "$schema": "https://unpkg.com/oh-my-opencode-slim@latest/oh-my-opencode-slim.schema.json",
+  "$schema": "https://unpkg.com/omos-fitzpa@latest/oh-my-opencode-slim.schema.json",
   "preset": "openai",
   "presets": {
     "openai": {
@@ -80,7 +101,9 @@ The default generated configuration includes both `openai` and `opencode-go` pre
       "librarian": { "model": "openai/gpt-5.4-mini", "variant": "low", "skills": [], "mcps": ["websearch", "context7", "grep_app"] },
       "explorer": { "model": "openai/gpt-5.4-mini", "variant": "low", "skills": [], "mcps": [] },
       "designer": { "model": "openai/gpt-5.4-mini", "variant": "medium", "skills": ["agent-browser"], "mcps": [] },
-      "fixer": { "model": "openai/gpt-5.4-mini", "variant": "low", "skills": [], "mcps": [] }
+      "fixer": { "model": "openai/gpt-5.4-mini", "variant": "low", "skills": [], "mcps": [] },
+      "reviewer": { "model": "openai/gpt-5.4-mini", "variant": "low", "skills": [], "mcps": [] },
+      "simplifier": { "model": "openai/gpt-5.4-mini", "variant": "low", "skills": [], "mcps": [] }
     },
     "opencode-go": {
       "orchestrator": { "model": "opencode-go/glm-5.1", "skills": [ "*" ], "mcps": [ "*", "!context7" ] },
@@ -89,11 +112,65 @@ The default generated configuration includes both `openai` and `opencode-go` pre
       "librarian": { "model": "opencode-go/minimax-m2.7", "skills": [], "mcps": [ "websearch", "context7", "grep_app" ] },
       "explorer": { "model": "opencode-go/minimax-m2.7", "skills": [], "mcps": [] },
       "designer": { "model": "opencode-go/kimi-k2.6", "variant": "medium", "skills": [ "agent-browser" ], "mcps": [] },
-      "fixer": { "model": "opencode-go/deepseek-v4-flash", "variant": "high", "skills": [], "mcps": [] }
+      "fixer": { "model": "opencode-go/deepseek-v4-flash", "variant": "high", "skills": [], "mcps": [] },
+      "reviewer": { "model": "opencode-go/deepseek-v4-flash", "variant": "high", "skills": [], "mcps": [] },
+      "simplifier": { "model": "opencode-go/deepseek-v4-flash", "variant": "high", "skills": [], "mcps": [] },
+      "observer": { "model": "opencode-go/kimi-k2.6", "skills": [], "mcps": [] }
+    },
+    "zen-balanced": {
+      "orchestrator": {
+        "model": [
+          { "id": "opencode/glm-5.1", "variant": "medium" },
+          { "id": "opencode/gpt-5.3-codex", "variant": "medium" },
+          { "id": "opencode/kimi-k2.6", "variant": "medium" },
+          { "id": "opencode/gpt-5.4-mini", "variant": "medium" }
+        ],
+        "skills": ["*"],
+        "mcps": ["*", "!context7"]
+      },
+      "oracle": {
+        "model": [
+          { "id": "opencode/gpt-5.3-codex", "variant": "high" },
+          { "id": "opencode/glm-5.1", "variant": "high" },
+          { "id": "opencode/kimi-k2.6", "variant": "high" },
+          { "id": "opencode/claude-haiku-4-5", "variant": "high" }
+        ],
+        "skills": ["simplify"],
+        "mcps": []
+      },
+      "reviewer": {
+        "model": [
+          { "id": "opencode/gpt-5.3-codex", "variant": "medium" },
+          { "id": "opencode/glm-5.1", "variant": "medium" },
+          { "id": "opencode/claude-haiku-4-5", "variant": "medium" }
+        ],
+        "skills": [],
+        "mcps": []
+      },
+      "simplifier": {
+        "model": [
+          { "id": "opencode/gpt-5.4-mini", "variant": "medium" },
+          { "id": "opencode/minimax-m2.7", "variant": "medium" },
+          { "id": "opencode/kimi-k2.6", "variant": "medium" }
+        ],
+        "skills": [],
+        "mcps": []
+      }
     }
   }
 }
 ```
+
+The Zen presets use the `opencode/...` provider IDs from OpenCode Zen. `zen-max`
+prefers the strongest non-Pro models while avoiding `gpt-5.4-pro`,
+`gpt-5.5-pro`, and `claude-opus-4-7`; `zen-balanced` uses efficient paid models;
+`zen-low` keeps paid cheap models first and free models late in fallback chains
+to reduce rate-limit risk.
+
+For CodeGraph-aware discovery, configure an OpenCode MCP named `codegraph` and
+generate `.codegraph/codegraph.db` in the project. Agents only receive the
+guidance when their `mcps` list allows `codegraph`. See
+**[MCPs](docs/mcps.md#custom-codegraph-mcp)** for details.
 
 ### For Alternative Providers
 
@@ -427,6 +504,36 @@ If any agent fails to respond, check your provider authentication and config fil
 
 ---
 
+### 08. Reviewer: The Watchful Auditor
+
+**Read-only changed-code review** — reviews staged, unstaged, and untracked
+working tree changes for bugs, correctness, security, regressions, and missing
+tests. Use `@reviewer` directly or run `/review-changes`.
+
+- Default model: `openai/gpt-5.4-mini`
+- Best for routine review of bounded changes
+- Use `@oracle` instead when review requires architecture-level judgment or
+  high-risk trade-off analysis
+
+Prompt: [`src/agents/reviewer.ts`](src/agents/reviewer.ts)
+
+---
+
+### 09. Simplifier: The Careful Refiner
+
+**Behavior-preserving cleanup** — simplifies recently changed code without
+changing public APIs, error messages, execution order, async behavior, or side
+effects. Use `@simplifier` directly or run `/simplify-changes`.
+
+- Default model: `openai/gpt-5.4-mini`
+- Best for local cleanup, reduced nesting, redundant checks, and clearer
+  changed code
+- Skips changes when behavior preservation is uncertain
+
+Prompt: [`src/agents/simplifier.ts`](src/agents/simplifier.ts)
+
+---
+
 ## Optional Agents
 
 ### Observer: The Silent Witness
@@ -491,6 +598,7 @@ Use this section as a map: start with installation, then jump to features, confi
 | **[Todo Continuation](docs/todo-continuation.md)** | Auto-continue orchestrator sessions with cooldowns and safety checks |
 | **[Preset Switching](docs/preset-switching.md)** | Switch agent model presets at runtime with `/preset` |
 | **[Subtask](docs/subtask.md)** | Run a bounded child worker with `/subtask` and return a structured summary to the main session |
+| **[Configuration](docs/configuration.md#delegation-automation)** | Optional post-edit `/review-changes` and `/simplify-changes` automation |
 | **[Codemap](docs/codemap.md)** | Generate hierarchical codemaps to understand large codebases faster |
 | **[Clonedeps](docs/clonedeps.md)** | Clone selected dependency source into an ignored local workspace for inspection |
 | **[Interview](docs/interview.md)** | Turn rough ideas into a structured markdown spec through a browser-based Q&A flow |
@@ -513,6 +621,7 @@ Use this section as a map: start with installation, then jump to features, confi
 | **[Author's Preset](docs/authors-preset.md)** | The author's daily mixed-provider setup |
 | **[$30 Preset](docs/thirty-dollars-preset.md)** | A budget mixed-provider setup for around $30/month |
 | **[OpenCode Go Preset](docs/opencode-go-preset.md)** | The bundled `opencode-go` preset generated by the installer |
+| **[OpenCode Zen Presets](docs/opencode-zen-presets.md)** | Bundled `zen-max`, `zen-balanced`, and `zen-low` generated presets |
 
 ---
 

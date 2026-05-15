@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import type { PluginConfig } from '../config';
 import {
   applyAgentVariant,
+  createDisplayNameMentionRewriter,
   normalizeAgentName,
   resolveAgentVariant,
   resolveRuntimeAgentName,
@@ -163,9 +164,25 @@ describe('resolveRuntimeAgentName', () => {
 
     expect(resolveRuntimeAgentName(config, '  @unknown  ')).toBe('unknown');
   });
+
+  test('returns empty normalized names unchanged', () => {
+    expect(resolveRuntimeAgentName(undefined, '   ')).toBe('');
+  });
 });
 
 describe('rewriteDisplayNameMentions', () => {
+  test('createDisplayNameMentionRewriter returns identity when no aliases exist', () => {
+    const rewrite = createDisplayNameMentionRewriter(undefined);
+    expect(rewrite('@oracle hello')).toBe('@oracle hello');
+  });
+
+  test('createDisplayNameMentionRewriter skips strings without mentions', () => {
+    const rewrite = createDisplayNameMentionRewriter({
+      agents: { oracle: { displayName: 'advisor' } },
+    } as PluginConfig);
+    expect(rewrite('plain text')).toBe('plain text');
+  });
+
   test('rewrites displayName mentions to internal names for direct invocation', () => {
     const config = {
       agents: {
@@ -209,20 +226,20 @@ describe('rewriteDisplayNameMentions', () => {
     const config = {
       agents: {
         'custom-reviewer': {
-          displayName: 'reviewer',
+          displayName: 'auditreview',
           variant: 'high',
           model: 'openai/gpt-5.5',
         },
       },
     } as PluginConfig;
 
-    expect(resolveRuntimeAgentName(config, '@reviewer')).toBe(
+    expect(resolveRuntimeAgentName(config, '@auditreview')).toBe(
       'custom-reviewer',
     );
     expect(
-      rewriteDisplayNameMentions(config, 'ask @reviewer for details'),
+      rewriteDisplayNameMentions(config, 'ask @auditreview for details'),
     ).toBe('ask @custom-reviewer for details');
-    expect(resolveAgentVariant(config, '@reviewer')).toBe('high');
+    expect(resolveAgentVariant(config, '@auditreview')).toBe('high');
   });
 });
 

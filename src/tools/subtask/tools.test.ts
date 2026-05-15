@@ -243,6 +243,76 @@ describe('subtask tool', () => {
       fs.rmSync(directory, { recursive: true, force: true });
     }
   });
+
+  test('blocks subtask when max depth would be exceeded', async () => {
+    const tracker = new SubagentDepthTracker(0);
+    const tool = createSubtaskTool(
+      {
+        directory: makeTempDir(),
+        client: { session: {} },
+      } as any,
+      createSubtaskState(),
+      tracker,
+    );
+
+    const result = await tool.execute({ prompt: 'too deep' }, {
+      sessionID: 'ses_old',
+    } as any);
+
+    expect(result).toContain('max subagent depth 0 would be exceeded');
+  });
+
+  test('throws when child session creation returns no id', async () => {
+    const directory = makeTempDir();
+    try {
+      const tool = createSubtaskTool(
+        {
+          directory,
+          client: {
+            session: {
+              abort: mock(async () => ({})),
+              create: mock(async () => ({ data: {} })),
+              messages: mock(async () => ({ data: [] })),
+              prompt: mock(async () => ({})),
+            },
+          },
+        } as any,
+        createSubtaskState(),
+      );
+
+      await expect(
+        tool.execute({ prompt: 'no id' }, { sessionID: 'ses_old' } as any),
+      ).rejects.toThrow('Subtask worker session did not return an id');
+    } finally {
+      fs.rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  test('throws when worker returns no summary', async () => {
+    const directory = makeTempDir();
+    try {
+      const tool = createSubtaskTool(
+        {
+          directory,
+          client: {
+            session: {
+              abort: mock(async () => ({})),
+              create: mock(async () => ({ id: 'ses_new' })),
+              messages: mock(async () => ({ data: [] })),
+              prompt: mock(async () => ({})),
+            },
+          },
+        } as any,
+        createSubtaskState(),
+      );
+
+      await expect(
+        tool.execute({ prompt: 'empty' }, { sessionID: 'ses_old' } as any),
+      ).rejects.toThrow('Subtask worker returned no summary');
+    } finally {
+      fs.rmSync(directory, { recursive: true, force: true });
+    }
+  });
 });
 
 describe('read_session tool', () => {
@@ -289,5 +359,62 @@ describe('read_session tool', () => {
 
     expect(result).toContain('can only read the source session');
     expect(messages).not.toHaveBeenCalled();
+  });
+
+  test('blocks read_session outside subtask sessions', async () => {
+    const messages = mock(async () => ({ data: [] }));
+    const result = await createReadSessionTool(
+      { session: { messages } } as any,
+      createSubtaskState(),
+    ).execute({ sessionID: 'ses_old' }, { sessionID: 'ses_user' } as any);
+
+    expect(result).toContain('only available from subtask worker sessions');
+  });
+
+  test('read_session handles empty and failed reads', async () => {
+    const state = createSubtaskState();
+    state.markSession('ses_worker', 'ses_old');
+    const emptyMessages = mock(async () => ({ data: [] }));
+
+    const empty = await createReadSessionTool(
+      { session: { messages: emptyMessages } } as any,
+      state,
+    ).execute({ sessionID: 'ses_old' }, { sessionID: 'ses_worker' } as any);
+    expect(empty).toContain('Session has no messages');
+
+    const failedMessages = mock(async () => {
+      throw new Error('boom');
+    });
+    const failed = await createReadSessionTool(
+      { session: { messages: failedMessages } } as any,
+      state,
+    ).execute({ sessionID: 'ses_old' }, { sessionID: 'ses_worker' } as any);
+    expect(failed).toContain('Could not read session ses_old: boom');
+  });
+
+  test('read_session formats files and truncation notice', async () => {
+    const messages = mock(async () => ({
+      data: [
+        {
+          info: { role: 'user' },
+          parts: [
+            { type: 'file', filename: 'notes.md' },
+            { type: 'text', text: 'ignored', ignored: true },
+          ],
+        },
+      ],
+    }));
+    const state = createSubtaskState();
+    state.markSession('ses_worker', 'ses_old');
+
+    const result = await createReadSessionTool(
+      { session: { messages } } as any,
+      state,
+    ).execute({ sessionID: 'ses_old', limit: 1 }, {
+      sessionID: 'ses_worker',
+    } as any);
+
+    expect(result).toContain('[Attached: notes.md]');
+    expect(result).toContain('Showing 1 most recent messages');
   });
 });

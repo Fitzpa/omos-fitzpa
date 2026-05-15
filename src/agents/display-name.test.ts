@@ -200,13 +200,13 @@ describe('displayName', () => {
     const config: PluginConfig = {
       disabled_agents: [],
       agents: {
-        councillor: { displayName: 'reviewer' },
+        councillor: { displayName: 'internalreview' },
       },
     };
 
     const sdkConfigs = getAgentConfigs(config);
 
-    expect(sdkConfigs.reviewer).toBeUndefined();
+    expect(sdkConfigs.internalreview).toBeUndefined();
     expect(sdkConfigs.councillor?.hidden).toBe(true);
   });
 });

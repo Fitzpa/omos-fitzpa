@@ -1,6 +1,8 @@
 # MCP Servers
 
-Built-in Model Context Protocol (MCP) servers ship with oh-my-opencode-slim and give agents access to external tools — web search, library documentation, and code search.
+Built-in Model Context Protocol (MCP) servers ship with `omos-fitzpa` and give
+agents access to external tools: web search, library documentation, and code
+search.
 
 ---
 
@@ -14,6 +16,46 @@ Built-in Model Context Protocol (MCP) servers ship with oh-my-opencode-slim and 
 
 ---
 
+## Custom CodeGraph MCP
+
+`omos-fitzpa` does not bundle a CodeGraph MCP server, but it recognizes a custom
+OpenCode MCP named `codegraph`.
+
+When both conditions are true, OMOS automatically adds CodeGraph guidance to
+eligible agents:
+
+- the current project contains `.codegraph/codegraph.db`
+- the merged OpenCode MCP config contains a server named `codegraph`
+
+The guidance is advisory. Agents are steered to use `codegraph_search`,
+`codegraph_files`, `codegraph_callers`, `codegraph_callees`,
+`codegraph_impact`, and `codegraph_explore` before broad `rg`, `find`, or `ls`
+discovery. Bash remains appropriate for tests, builds, git, exact file
+operations, and fallback when the index is stale or incomplete.
+
+Recommended access:
+
+```jsonc
+{
+  "presets": {
+    "my-preset": {
+      "orchestrator": { "mcps": ["*", "!context7"] },
+      "explorer": { "mcps": ["codegraph"] },
+      "fixer": { "mcps": ["codegraph"] },
+      "reviewer": { "mcps": ["codegraph"] },
+      "simplifier": { "mcps": ["codegraph"] },
+      "oracle": { "mcps": ["codegraph"] }
+    }
+  }
+}
+```
+
+Wildcard rules apply to custom MCPs too. For example, an orchestrator configured
+with `["*", "!context7"]` can use `codegraph` when OpenCode has that MCP
+configured.
+
+---
+
 ## Default Permissions Per Agent
 
 | Agent | Default MCPs |
@@ -24,7 +66,10 @@ Built-in Model Context Protocol (MCP) servers ship with oh-my-opencode-slim and 
 | `oracle` | none |
 | `explorer` | none |
 | `fixer` | none |
- | `councillor` | none |
+| `reviewer` | none |
+| `simplifier` | none |
+| `council` | none |
+| `councillor` | none |
 
 ---
 

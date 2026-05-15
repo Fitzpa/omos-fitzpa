@@ -4,6 +4,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import {
   doctor,
+  formatHumanDoctorResult,
   formatJsonDoctorResult,
   parseDoctorArgs,
   runDoctorCheck,
@@ -122,6 +123,66 @@ describe('runDoctorCheck', () => {
     expect(result.presetCheck).toBeUndefined();
   });
 
+  test('schema error and missing preset are rendered in human output', () => {
+    const result = {
+      ok: false,
+      project: '/project',
+      configs: [
+        {
+          scope: 'user' as const,
+          path: '/config.json',
+          exists: true,
+          ok: false,
+          error: {
+            kind: 'invalid-schema' as const,
+            message: 'first line\nsecond line',
+          },
+        },
+        {
+          scope: 'project' as const,
+          path: null,
+          exists: false,
+          ok: true,
+        },
+      ],
+      presetCheck: {
+        preset: 'missing',
+        ok: false,
+        error: {
+          kind: 'missing-preset' as const,
+          message: 'Preset "missing" not found in config',
+        },
+      },
+    };
+
+    expect(formatHumanDoctorResult(result)).toContain('  Schema error:');
+    expect(formatHumanDoctorResult(result)).toContain('  second line');
+    expect(formatHumanDoctorResult(result)).toContain('[preset] missing ✗');
+  });
+
+  test('read errors are rendered in human output', () => {
+    const result = {
+      ok: false,
+      project: '/project',
+      configs: [
+        {
+          scope: 'user' as const,
+          path: '/config.json',
+          exists: true,
+          ok: false,
+          error: {
+            kind: 'read-error' as const,
+            message: 'permission denied',
+          },
+        },
+      ],
+    };
+
+    expect(formatHumanDoctorResult(result)).toContain(
+      'Read error: permission denied',
+    );
+  });
+
   test('config deleted after discovery returns read error with path', () => {
     const projectDir = path.join(tempDir, 'project');
     const configDir = path.join(projectDir, '.opencode');
@@ -147,6 +208,19 @@ describe('runDoctorCheck', () => {
     } finally {
       statSpy.mockRestore();
     }
+  });
+
+  test('config path that is a directory returns read error', () => {
+    const projectDir = path.join(tempDir, 'project');
+    const configDir = path.join(projectDir, '.opencode');
+    fs.mkdirSync(path.join(configDir, 'oh-my-opencode-slim.json'), {
+      recursive: true,
+    });
+
+    const result = runDoctorCheck(projectDir);
+
+    expect(result.ok).toBe(false);
+    expect(result.configs[1].error?.kind).toBe('read-error');
   });
 
   test('invalid schema returns not ok with schema issues', () => {

@@ -1,6 +1,6 @@
 # Divoom MiniToo Display Integration
 
-oh-my-opencode-slim can mirror agent activity to a Divoom MiniToo Bluetooth
+`omos-fitzpa` can mirror agent activity to a Divoom MiniToo Bluetooth
 display. The integration is optional and disabled by default.
 
 ## Demo
@@ -92,7 +92,7 @@ If that updates the display, the OpenCode integration should work once enabled.
 `XDG_DATA_HOME` is set to a non-empty absolute path. Otherwise it falls back to
 `~/.local/share/opencode/storage/oh-my-opencode-slim/divoom/captures`.
 
-## Enable in oh-my-opencode-slim
+## Enable in omos-fitzpa
 
 Open your plugin config:
 

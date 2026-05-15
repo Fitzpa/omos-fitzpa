@@ -1,6 +1,8 @@
 # Maintainer Guide
 
-This document is the source of truth for issue triage and lightweight repo maintenance in `oh-my-opencode-slim`.
+This document is the source of truth for issue triage, release handling, and
+lightweight repo maintenance for `omos-fitzpa`, the published npm package for
+this fork.
 
 ## Goals
 
@@ -40,7 +42,7 @@ Bug reports should include:
 - steps to reproduce
 - relevant config
 - OpenCode version
-- `oh-my-opencode-slim` version
+- `omos-fitzpa` version
 - operating system
 - logs, screenshots, or extra context if relevant
 
@@ -107,6 +109,21 @@ PRs use a minimal prompt:
 > What changed, and why was it needed?
 
 The goal is clarity without process overhead.
+
+## Releases
+
+The npm package name is `omos-fitzpa`. `prepublishOnly` runs `bun run build`
+before publish, so generated `dist/` files and declarations are refreshed by
+the package lifecycle.
+
+For npm accounts with 2FA, publish with an OTP:
+
+```bash
+npm publish --otp=<code>
+```
+
+Alternatively, use a granular npm automation token with publish rights for this
+package.
 
 ## Future Changes
 

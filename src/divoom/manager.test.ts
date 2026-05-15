@@ -97,6 +97,21 @@ describe('DivoomManager', () => {
     expect(calls[0].args[1]).toBe(path.join(tempDir, 'intro.gif'));
   });
 
+  test('default sender launches configured command', async () => {
+    const manager = new DivoomManager(
+      {
+        enabled: true,
+        python: '/bin/true',
+        script: scriptPath,
+      },
+      undefined,
+      { assetDir: tempDir },
+    );
+
+    manager.onPluginLoad();
+    await manager.flush();
+  });
+
   test('can be enabled for one run with env var', async () => {
     process.env.OH_MY_OPENCODE_SLIM_DIVOOM = '1';
     const manager = new DivoomManager(

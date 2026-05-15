@@ -15,6 +15,7 @@ import {
   getEnabledAgentNames,
   isSubagent,
 } from './index';
+import { buildOrchestratorPrompt } from './orchestrator';
 
 function councilConfig() {
   const parsed = CouncilConfigSchema.parse({
@@ -112,6 +113,19 @@ describe('fixer agent fallback', () => {
     expect(fixer?.config.model).toBe(librarian?.config.model);
   });
 
+  test('fixer inherits first object model from librarian model array', () => {
+    const agents = createAgents({
+      agents: {
+        librarian: {
+          model: [{ id: 'openai/librarian-primary', variant: 'low' }],
+        },
+      },
+    } as any);
+
+    const fixer = agents.find((agent) => agent.name === 'fixer');
+    expect(fixer?.config.model).toBe('openai/librarian-primary');
+  });
+
   test('fixer uses its own model when explicitly configured', () => {
     const config: PluginConfig = {
       agents: {
@@ -122,6 +136,105 @@ describe('fixer agent fallback', () => {
     const agents = createAgents(config);
     const fixer = agents.find((a) => a.name === 'fixer');
     expect(fixer?.config.model).toBe('fixer-specific-model');
+  });
+});
+
+describe('reviewer and simplifier agents', () => {
+  test('creates reviewer and simplifier by default with cheap default models', () => {
+    const agents = createAgents();
+    const names = agents.map((a) => a.name);
+
+    expect(names).toContain('reviewer');
+    expect(names).toContain('simplifier');
+    expect(agents.find((a) => a.name === 'reviewer')?.config.model).toBe(
+      DEFAULT_MODELS.fixer,
+    );
+    expect(agents.find((a) => a.name === 'simplifier')?.config.model).toBe(
+      DEFAULT_MODELS.fixer,
+    );
+  });
+
+  test('preset overrides apply to reviewer and simplifier', () => {
+    const config: PluginConfig = {
+      agents: {
+        reviewer: {
+          model: 'openai/reviewer',
+          variant: 'low',
+          temperature: 0.4,
+          options: { textVerbosity: 'low' },
+          skills: ['requesting-code-review'],
+          mcps: ['websearch'],
+        },
+        simplifier: {
+          model: 'openai/simplifier',
+          variant: 'medium',
+          temperature: 0.5,
+          options: { reasoningEffort: 'low' },
+          skills: ['simplify'],
+          mcps: ['context7'],
+        },
+      },
+    };
+
+    const configs = getAgentConfigs(config);
+
+    expect(configs.reviewer.model).toBe('openai/reviewer');
+    expect(configs.reviewer.variant).toBe('low');
+    expect(configs.reviewer.temperature).toBe(0.4);
+    expect(configs.reviewer.options).toEqual({ textVerbosity: 'low' });
+    expect(configs.reviewer.mcps).toEqual(['websearch']);
+    expect((configs.reviewer.permission as any).skill).toMatchObject({
+      'requesting-code-review': 'allow',
+    });
+
+    expect(configs.simplifier.model).toBe('openai/simplifier');
+    expect(configs.simplifier.variant).toBe('medium');
+    expect(configs.simplifier.temperature).toBe(0.5);
+    expect(configs.simplifier.options).toEqual({ reasoningEffort: 'low' });
+    expect(configs.simplifier.mcps).toEqual(['context7']);
+    expect((configs.simplifier.permission as any).skill).toMatchObject({
+      simplify: 'allow',
+    });
+  });
+
+  test('disabled_agents removes reviewer and simplifier from registration and prompt', () => {
+    const agents = createAgents({
+      disabled_agents: ['reviewer', 'simplifier'],
+    });
+    const names = agents.map((a) => a.name);
+    const orchestrator = agents.find((a) => a.name === 'orchestrator');
+
+    expect(names).not.toContain('reviewer');
+    expect(names).not.toContain('simplifier');
+    expect(orchestrator?.config.prompt).not.toContain('@reviewer');
+    expect(orchestrator?.config.prompt).not.toContain('@simplifier');
+  });
+
+  test('getAgentConfigs marks reviewer and simplifier as subagents', () => {
+    const configs = getAgentConfigs();
+
+    expect(configs.reviewer.mode).toBe('subagent');
+    expect(configs.simplifier.mode).toBe('subagent');
+  });
+});
+
+describe('orchestrator routing prompt', () => {
+  test('routes bounded review and simplification to cheap specialists', () => {
+    const prompt = buildOrchestratorPrompt();
+
+    expect(prompt).toContain('@reviewer');
+    expect(prompt).toContain('@simplifier');
+    expect(prompt).toContain(
+      'Delegate bounded, mechanical, test, cleanup, and review tasks to cheap specialists even when small.',
+    );
+    expect(prompt).toContain(
+      'Batch tiny edits into one @fixer or @simplifier call.',
+    );
+    expect(prompt).toContain('Route code review to @reviewer');
+    expect(prompt).toContain(
+      'Route behavior-preserving cleanup/simplification to @simplifier',
+    );
+    expect(prompt).not.toContain('Single small change (<20 lines, one file)');
   });
 });
 
@@ -250,6 +363,41 @@ describe('skill permissions', () => {
     expect(skillPerm?.clonedeps).toBe('allow');
   });
 
+  test('orchestrator prompt contains CodeGraph delegation guidance', () => {
+    const orchestrator = createAgents().find((a) => a.name === 'orchestrator');
+
+    expect(orchestrator?.config.prompt).toContain('CodeGraph');
+    expect(orchestrator?.config.prompt).toContain('@explorer');
+    expect(orchestrator?.config.prompt).toContain('broad code discovery');
+  });
+
+  test('explorer prompt contains CodeGraph-first guidance', () => {
+    const explorer = createAgents().find((a) => a.name === 'explorer');
+
+    expect(explorer?.config.prompt).toContain('CodeGraph');
+    expect(explorer?.config.prompt).toContain('codegraph_search');
+    expect(explorer?.config.prompt).toContain('grep/glob/AST');
+  });
+
+  test('CodeGraph prompt guidance survives custom append prompts', () => {
+    const agents = createAgents({
+      agents: {
+        scout: {
+          model: 'openai/gpt-5.4-mini',
+          prompt: 'Custom scout prompt.',
+          orchestratorPrompt: '@scout\n- Role: Custom scout',
+        },
+      },
+    } as any);
+
+    const orchestrator = agents.find((a) => a.name === 'orchestrator');
+    const explorer = agents.find((a) => a.name === 'explorer');
+
+    expect(orchestrator?.config.prompt).toContain('CodeGraph');
+    expect(orchestrator?.config.prompt).toContain('@scout');
+    expect(explorer?.config.prompt).toContain('CodeGraph');
+  });
+
   test('fixer does not get codemap skill allowed by default', () => {
     const agents = createAgents();
     const fixer = agents.find((a) => a.name === 'fixer');
@@ -363,11 +511,13 @@ describe('createAgents', () => {
     expect(names).toContain('oracle');
     expect(names).toContain('librarian');
     expect(names).toContain('fixer');
+    expect(names).toContain('reviewer');
+    expect(names).toContain('simplifier');
   });
 
-  test('creates exactly 7 agents by default (observer disabled, council unconfigured)', () => {
+  test('creates exactly 9 agents by default (observer disabled, council unconfigured)', () => {
     const agents = createAgents();
-    expect(agents.length).toBe(7);
+    expect(agents.length).toBe(9);
   });
 
   test('does not create council when council is not configured', () => {
@@ -756,6 +906,30 @@ describe('PluginConfigSchema custom-agent-only prompt fields', () => {
 
     expect(result.success).toBe(true);
   });
+
+  test('delegationAutomation defaults to disabled when omitted and parses flags', () => {
+    const omitted = PluginConfigSchema.safeParse({});
+    expect(omitted.success).toBe(true);
+    if (omitted.success) {
+      expect(omitted.data.delegationAutomation).toBeUndefined();
+    }
+
+    const configured = PluginConfigSchema.safeParse({
+      delegationAutomation: {
+        postEditReview: true,
+        postEditSimplify: false,
+        mainSessionOnly: true,
+      },
+    });
+    expect(configured.success).toBe(true);
+    if (configured.success) {
+      expect(configured.data.delegationAutomation).toEqual({
+        postEditReview: true,
+        postEditSimplify: false,
+        mainSessionOnly: true,
+      });
+    }
+  });
 });
 
 describe('disabled_agents', () => {
@@ -796,13 +970,13 @@ describe('disabled_agents', () => {
 
   test('agent count decreases when agents are disabled', () => {
     const agents = createAgents();
-    expect(agents.length).toBe(7); // observer disabled, council unconfigured
+    expect(agents.length).toBe(9); // observer disabled, council unconfigured
 
     const disabledConfig: PluginConfig = {
       disabled_agents: ['observer', 'designer'],
     };
     const disabledAgents = createAgents(disabledConfig);
-    expect(disabledAgents.length).toBe(6);
+    expect(disabledAgents.length).toBe(8);
   });
 
   test('getDisabledAgents respects protection rules', () => {
@@ -846,7 +1020,7 @@ describe('disabled_agents', () => {
     };
     const agents = createAgents(config);
     const names = agents.map((a) => a.name);
-    expect(agents.length).toBe(8);
+    expect(agents.length).toBe(10);
     expect(names).toContain('observer');
     expect(names).not.toContain('council');
   });

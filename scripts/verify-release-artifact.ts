@@ -15,6 +15,10 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 const distDir = path.join(repoRoot, 'dist');
+const packageJson = JSON.parse(
+  readFileSync(path.join(repoRoot, 'package.json'), 'utf8'),
+) as { name: string };
+const packageName = packageJson.name;
 
 const suspiciousPathPatterns = [
   /\/Users\/[^\s'"`]+(?:node_modules|oh-my-opencode-slim)[^\s'"`]*/,
@@ -48,9 +52,36 @@ function fail(message: string): never {
 }
 
 function run(command: string, args: string[], options: { cwd?: string } = {}) {
+  if (typeof Bun !== 'undefined') {
+    const result = Bun.spawnSync([command, ...args], {
+      cwd: options.cwd ?? repoRoot,
+      env: {
+        ...process.env,
+        BUN_TMPDIR: process.env.BUN_TMPDIR ?? tmpdir(),
+      },
+      stdout: 'pipe',
+      stderr: 'pipe',
+    });
+    const stdout = new TextDecoder().decode(result.stdout);
+    const stderr = new TextDecoder().decode(result.stderr);
+
+    if (result.exitCode !== 0) {
+      const detail = [stdout, stderr].filter(Boolean).join('\n');
+      fail(
+        `Command failed: ${command} ${args.join(' ')}${detail ? `\n${detail}` : ''}`,
+      );
+    }
+
+    return stdout.trim();
+  }
+
   const result = spawnSync(command, args, {
     cwd: options.cwd ?? repoRoot,
     encoding: 'utf8',
+    env: {
+      ...process.env,
+      BUN_TMPDIR: process.env.BUN_TMPDIR ?? tmpdir(),
+    },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 
@@ -112,9 +143,19 @@ function verifyDistHasNoLeakedPaths() {
 
 function packArtifact() {
   console.log('Packing npm artifact...');
-  const output = run('npm', ['pack', '--json', '--ignore-scripts'], {
-    cwd: repoRoot,
-  });
+  const output = run(
+    'npm',
+    [
+      '--cache',
+      path.join(tmpdir(), 'omos-npm-cache'),
+      'pack',
+      '--json',
+      '--ignore-scripts',
+    ],
+    {
+      cwd: repoRoot,
+    },
+  );
   const parsed = parsePackJson(output);
   const tarball = parsed[0]?.filename;
 
@@ -152,14 +193,24 @@ function verifyFreshInstall(tarballPath: string) {
         2,
       ),
     );
-    run('bun', ['add', '--ignore-scripts', tarballTarget], {
-      cwd: installDir,
-    });
+    run(
+      'npm',
+      [
+        '--cache',
+        path.join(tmpdir(), 'omos-npm-cache'),
+        'install',
+        '--ignore-scripts',
+        tarballTarget,
+      ],
+      {
+        cwd: installDir,
+      },
+    );
 
     const installedEntry = path.join(
       installDir,
       'node_modules',
-      'oh-my-opencode-slim',
+      ...packageName.split('/'),
       'dist',
       'index.js',
     );
@@ -174,7 +225,7 @@ function verifyFreshInstall(tarballPath: string) {
     }
 
     const smokeScript = [
-      "import pkg from 'oh-my-opencode-slim';",
+      `import pkg from '${packageName}';`,
       "if (typeof pkg !== 'function') throw new Error('default export is not a function');",
       "console.log('package loads');",
       'process.exit(0);',

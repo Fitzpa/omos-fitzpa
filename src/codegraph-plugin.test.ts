@@ -38,111 +38,119 @@ function createContext(directory: string) {
 describe('CodeGraph plugin hooks', () => {
   test('system transform injects CodeGraph guidance when index and MCP are available', async () => {
     const dir = createProject();
-    const plugin = await OhMyOpenCodeLite(createContext(dir));
-    const opencodeConfig: Record<string, unknown> = {
-      mcp: { codegraph: {} },
-      agent: {
-        explorer: { mcps: ['codegraph'] },
-      },
-    };
+    try {
+      const plugin = await OhMyOpenCodeLite(createContext(dir));
+      const opencodeConfig: Record<string, unknown> = {
+        mcp: { codegraph: {} },
+        agent: {
+          explorer: { mcps: ['codegraph'] },
+        },
+      };
 
-    await plugin.config?.(opencodeConfig);
-    await plugin['chat.message']?.(
-      { sessionID: 's1', agent: 'explorer' },
-      { message: { agent: 'explorer' } },
-    );
-    const output = { system: ['Base system'] };
+      await plugin.config?.(opencodeConfig);
+      await plugin['chat.message']?.(
+        { sessionID: 's1', agent: 'explorer' },
+        { message: { agent: 'explorer' } },
+      );
+      const output = { system: ['Base system'] };
 
-    await plugin['experimental.chat.system.transform']?.(
-      { sessionID: 's1' },
-      output,
-    );
+      await plugin['experimental.chat.system.transform']?.(
+        { sessionID: 's1' },
+        output,
+      );
 
-    expect(output.system).toHaveLength(1);
-    expect(output.system[0]).toContain('CodeGraph is available');
-    expect(output.system[0]).toContain('Base system');
-
-    rmSync(dir, { recursive: true, force: true });
+      expect(output.system).toHaveLength(1);
+      expect(output.system[0]).toContain('CodeGraph is available');
+      expect(output.system[0]).toContain('Base system');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   test('system transform does not duplicate CodeGraph guidance', async () => {
     const dir = createProject();
-    const plugin = await OhMyOpenCodeLite(createContext(dir));
-    const opencodeConfig: Record<string, unknown> = {
-      mcp: { codegraph: {} },
-      agent: { explorer: { mcps: ['codegraph'] } },
-    };
-    await plugin.config?.(opencodeConfig);
-    await plugin['chat.message']?.(
-      { sessionID: 's1', agent: 'explorer' },
-      { message: { agent: 'explorer' } },
-    );
-    const output = { system: ['Base system'] };
+    try {
+      const plugin = await OhMyOpenCodeLite(createContext(dir));
+      const opencodeConfig: Record<string, unknown> = {
+        mcp: { codegraph: {} },
+        agent: { explorer: { mcps: ['codegraph'] } },
+      };
+      await plugin.config?.(opencodeConfig);
+      await plugin['chat.message']?.(
+        { sessionID: 's1', agent: 'explorer' },
+        { message: { agent: 'explorer' } },
+      );
+      const output = { system: ['Base system'] };
 
-    await plugin['experimental.chat.system.transform']?.(
-      { sessionID: 's1' },
-      output,
-    );
-    await plugin['experimental.chat.system.transform']?.(
-      { sessionID: 's1' },
-      output,
-    );
+      await plugin['experimental.chat.system.transform']?.(
+        { sessionID: 's1' },
+        output,
+      );
+      await plugin['experimental.chat.system.transform']?.(
+        { sessionID: 's1' },
+        output,
+      );
 
-    expect(output.system[0].match(/CodeGraph is available/g)).toHaveLength(1);
-
-    rmSync(dir, { recursive: true, force: true });
+      expect(output.system[0].match(/CodeGraph is available/g)).toHaveLength(1);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   test('system transform skips agents without CodeGraph MCP permission', async () => {
     const dir = createProject();
-    const plugin = await OhMyOpenCodeLite(createContext(dir));
-    const opencodeConfig: Record<string, unknown> = {
-      mcp: { codegraph: {} },
-      agent: { explorer: { mcps: [] } },
-    };
-    await plugin.config?.(opencodeConfig);
-    await plugin['chat.message']?.(
-      { sessionID: 's1', agent: 'explorer' },
-      { message: { agent: 'explorer' } },
-    );
-    const output = { system: ['Base system'] };
+    try {
+      const plugin = await OhMyOpenCodeLite(createContext(dir));
+      const opencodeConfig: Record<string, unknown> = {
+        mcp: { codegraph: {} },
+        agent: { explorer: { mcps: [] } },
+      };
+      await plugin.config?.(opencodeConfig);
+      await plugin['chat.message']?.(
+        { sessionID: 's1', agent: 'explorer' },
+        { message: { agent: 'explorer' } },
+      );
+      const output = { system: ['Base system'] };
 
-    await plugin['experimental.chat.system.transform']?.(
-      { sessionID: 's1' },
-      output,
-    );
+      await plugin['experimental.chat.system.transform']?.(
+        { sessionID: 's1' },
+        output,
+      );
 
-    expect(output.system[0]).not.toContain('CodeGraph is available');
-
-    rmSync(dir, { recursive: true, force: true });
+      expect(output.system[0]).not.toContain('CodeGraph is available');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   test('bash tool definition is amended only when CodeGraph is available', async () => {
     const indexedDir = createProject();
-    const indexedPlugin = await OhMyOpenCodeLite(createContext(indexedDir));
-    await indexedPlugin.config?.({ mcp: { codegraph: {} } });
-    const amended = { description: 'Run shell commands.' };
-
-    await indexedPlugin['tool.definition']?.(
-      { toolID: 'bash' },
-      amended as any,
-    );
-
-    expect(amended.description).toContain('codegraph_search');
-
     const plainDir = createProject(false);
-    const plainPlugin = await OhMyOpenCodeLite(createContext(plainDir));
-    await plainPlugin.config?.({ mcp: { codegraph: {} } });
-    const unchanged = { description: 'Run shell commands.' };
+    try {
+      const indexedPlugin = await OhMyOpenCodeLite(createContext(indexedDir));
+      await indexedPlugin.config?.({ mcp: { codegraph: {} } });
+      const amended = { description: 'Run shell commands.' };
 
-    await plainPlugin['tool.definition']?.(
-      { toolID: 'bash' },
-      unchanged as any,
-    );
+      await indexedPlugin['tool.definition']?.(
+        { toolID: 'bash' },
+        amended as any,
+      );
 
-    expect(unchanged.description).toBe('Run shell commands.');
+      expect(amended.description).toContain('codegraph_search');
 
-    rmSync(indexedDir, { recursive: true, force: true });
-    rmSync(plainDir, { recursive: true, force: true });
+      const plainPlugin = await OhMyOpenCodeLite(createContext(plainDir));
+      await plainPlugin.config?.({ mcp: { codegraph: {} } });
+      const unchanged = { description: 'Run shell commands.' };
+
+      await plainPlugin['tool.definition']?.(
+        { toolID: 'bash' },
+        unchanged as any,
+      );
+
+      expect(unchanged.description).toBe('Run shell commands.');
+    } finally {
+      rmSync(indexedDir, { recursive: true, force: true });
+      rmSync(plainDir, { recursive: true, force: true });
+    }
   });
 });

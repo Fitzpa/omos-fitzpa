@@ -39,11 +39,12 @@ const SYMBOLS = {
 
 const GITHUB_REPO = 'fitzpa/omos-fitzpa';
 const GITHUB_URL = `https://github.com/${GITHUB_REPO}`;
+const DISPLAY_NAME = 'omos-fitzpa';
 
 function printHeader(isUpdate: boolean): void {
   console.log();
   console.log(
-    `${BOLD}oh-my-opencode-slim ${isUpdate ? 'Update' : 'Install'}${RESET}`,
+    `${BOLD}${DISPLAY_NAME} ${isUpdate ? 'Update' : 'Install'}${RESET}`,
   );
   console.log('='.repeat(30));
   console.log();
@@ -165,7 +166,7 @@ async function runInstall(config: InstallConfig): Promise<number> {
     const { ok } = await checkOpenCodeInstalled();
     if (!ok) return 1;
   }
-  printStep(step++, totalSteps, 'Adding oh-my-opencode-slim plugin...');
+  printStep(step++, totalSteps, `Adding ${DISPLAY_NAME} plugin...`);
   if (config.dryRun) {
     printInfo('Dry run mode - skipping plugin installation');
   } else {
@@ -215,7 +216,7 @@ async function runInstall(config: InstallConfig): Promise<number> {
     if (!handleStepResult(lspResult, 'LSP enabled')) return 1;
   }
 
-  printStep(step++, totalSteps, 'Writing oh-my-opencode-slim configuration...');
+  printStep(step++, totalSteps, `Writing ${DISPLAY_NAME} configuration...`);
   if (config.dryRun) {
     const liteConfig = generateLiteConfig(config);
     printInfo('Dry run mode - configuration that would be written:');
@@ -328,9 +329,7 @@ async function runInstall(config: InstallConfig): Promise<number> {
   console.log(`${modelsInfo}`);
   const altProviders = 'For the full configuration reference, see:';
   console.log(altProviders);
-  const docsUrl =
-    'https://github.com/fitzpa/omos-fitzpa/' +
-    'blob/master/docs/configuration.md';
+  const docsUrl = `${GITHUB_URL}/blob/master/docs/configuration.md`;
   console.log(`  ${BLUE}${docsUrl}${RESET}`);
   console.log();
 

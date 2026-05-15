@@ -134,6 +134,31 @@ describe('delegation automation', () => {
     expect(ctx.client.session.promptAsync).not.toHaveBeenCalled();
   });
 
+  test('clears tracked write activity when session is deleted', async () => {
+    const ctx = createCtx();
+    const hook = createDelegationAutomationHook(ctx, {
+      postEditReview: true,
+      postEditSimplify: true,
+      mainSessionOnly: false,
+    });
+
+    hook.handleToolExecuteAfter({ tool: 'write', sessionID: 's1' });
+    await hook.handleEvent({
+      event: {
+        type: 'session.deleted',
+        properties: { sessionID: 's1' },
+      },
+    });
+    await hook.handleEvent({
+      event: {
+        type: 'session.idle',
+        properties: { sessionID: 's1' },
+      },
+    });
+
+    expect(ctx.client.session.promptAsync).not.toHaveBeenCalled();
+  });
+
   test('logs and swallows prompt failures', async () => {
     const ctx = {
       client: {

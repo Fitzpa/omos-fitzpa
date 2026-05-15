@@ -110,6 +110,10 @@ export function createDelegationAutomationHook(
       };
     }): Promise<void> {
       const sessionID = input.event.properties?.sessionID;
+      if (input.event.type === 'session.deleted' && sessionID) {
+        dirtySessions.delete(sessionID);
+        return;
+      }
       if (!isEnabled() || !sessionID || !isIdleEvent(input)) {
         return;
       }

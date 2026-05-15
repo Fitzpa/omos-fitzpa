@@ -1,6 +1,6 @@
 {
   "name": "omos-fitzpa",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Lightweight agent orchestration plugin for OpenCode - a fork of oh-my-opencode-slim",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

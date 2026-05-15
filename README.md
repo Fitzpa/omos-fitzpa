@@ -67,7 +67,7 @@ you pass `--reset`.
 
 ### Getting Started
 
-The installer generates OpenAI, OpenCode Go, and OpenCode Zen presets, with OpenAI active by default. OpenAI uses `openai/gpt-5.5` for the higher-judgment agents and `openai/gpt-5.4-mini` for the faster scoped agents. To make another generated preset active during install, run `bunx omos-fitzpa@latest install --preset=opencode-go`, `--preset=zen-max`, `--preset=zen-balanced`, or `--preset=zen-low`, or change the default preset name in `~/.config/opencode/oh-my-opencode-slim.json` after installation.
+The installer generates OpenAI, OpenCode Go, and OpenCode Zen presets, with OpenAI active by default. OpenAI uses `openai/gpt-5.5` for the higher-judgment agents and `openai/gpt-5.4-mini` for the faster-scoped agents. To make another generated preset active during install, run `bunx omos-fitzpa@latest install --preset=opencode-go`, `--preset=zen-max`, `--preset=zen-balanced`, or `--preset=zen-low`, or change the default preset name in `~/.config/opencode/oh-my-opencode-slim.json` after installation.
 
 Then:
 
@@ -86,7 +86,7 @@ Then:
 4. **Update the models you want for each agent**
 
 > [!TIP]
-> It's **recommended** to understand how automatic delegation works. The **[Orchestrator prompt](https://github.com/fitzpa/omos-fitzpa/blob/enhanced/src/agents/orchestrator.ts#L28)** contains the delegation rules, specialist routing logic, and the thresholds for when the main agent should hand work off to subagents. You can alway delegate manually by calling a subagent via: `@agentName <task>`
+> It's **recommended** to understand how automatic delegation works. The **[Orchestrator prompt](src/agents/orchestrator.ts)** contains the delegation rules, specialist routing logic, and the thresholds for when the main agent should hand work off to subagents. You can always delegate manually by calling a subagent via: `@agentName <task>`
 
 The default generated configuration includes `openai`, `opencode-go`, `zen-max`, `zen-balanced`, and `zen-low` presets.
 
